@@ -51,7 +51,7 @@ Ensure you have Python installed on your system.
     Edit `.env` to ensure SQLite is selected:
     ```bash
     USE_MSSQL=false
-    SQLITE_DB_PATH=discharges.db
+    SQLITE_DB_PATH=DOH_AMHD_NO_PII.db
     ```
 
     **Option B: MSSQL (Production/Testing)**
@@ -70,7 +70,7 @@ Ensure you have Python installed on your system.
 
 **For SQLite (Local):**
 
-If the `discharges.db` file is missing or needs to be refreshed with the latest CSV data:
+If the `DOH_AMHD_NO_PII.db` file is missing or needs to be refreshed with the latest CSV data:
 
 ```bash
 source venv/bin/activate
@@ -81,17 +81,9 @@ python create_db.py
 
 Output should be: "✅ Database tables created successfully in SQLite"
 
-**For MSSQL (Production):**
+*This will create tables in your local database and populate them from the CSV files.*
 
-Ensure your `.env` has `USE_MSSQL=true` and valid credentials, then run:
-
-```bash
-python create_db.py
-```
-
-*This will create tables in your MSSQL database and populate them from the CSV files.*
-
-Output should be: "✅ Database tables created successfully in MSSQL"
+Output should be: "✅ Database tables created successfully"
 
 ### Test Database Connection
 
@@ -203,7 +195,7 @@ The application seamlessly switches between SQLite and MSSQL based on the `USE_M
 
 ### Local Development (SQLite)
 - Set `USE_MSSQL=false` or leave unset in `.env`
-- Uses local `discharges.db` file
+- Uses local `DOH_AMHD_NO_PII.db` file
 - No MSSQL credentials needed
 
 ### Production/Testing (MSSQL)
@@ -287,7 +279,7 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
   * **`polysubstance_dashboard.py`**: Dashboard specific to analyzing polysubstance use data.
   * **`creative_dashboard.py`**: Dashboard containing creative/experimental visualizations.
   * **`create_db.py`**: Script to initialize and populate the SQLite database from source CSVs.
-  * **`discharges.db`**: SQLite database storing the processed discharge data.
+  * **`DOH_AMHD_NO_PII.db`**: SQLite database storing the processed discharge data.
   * **`assets/`**: Contains static assets (CSS, images) for the Dash application.
   * **`queries.sql`**: SQL queries used for data extraction and transformation.
 
@@ -317,7 +309,7 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 
 **`queries.sql`** - Centralized SQL query repository. Contains named SQL queries used throughout the application (e.g., `load_main_data`, `load_polysubstance_data`, `count_by_sex_distinct`). Keeps SQL separate from Python code for easier maintenance.
 
-**`discharges.db`** - SQLite database (created by `create_db.py` when using local mode) containing the discharge data tables.
+**`DOH_AMHD_NO_PII.db`** - SQLite database (created by `create_db.py` when using local mode) containing the discharge data tables.
 
 **`.env`** - Environment configuration file (not committed to git). Contains database credentials and configuration. Copy from `.env.example` to get started.
 

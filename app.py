@@ -22,7 +22,7 @@ def load_sql_query(name, path="queries.sql"):
     return query_map[name]
 
 # Load data
-conn = sqlite3.connect("discharges.db")
+conn = sqlite3.connect("DOH_AMHD_NO_PII.db")
 
 df_raw = pd.read_sql_query(load_sql_query("load_main_data"), conn)
 distinct_counts = pd.read_sql_query(load_sql_query("count_by_sex_distinct"), conn)
