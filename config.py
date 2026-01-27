@@ -14,7 +14,7 @@ load_dotenv()
 USE_MSSQL = os.environ.get('USE_MSSQL', 'false').lower() in ('true', '1', 'yes')
 
 # SQLite Configuration (for local development)
-SQLITE_DB_PATH = os.environ.get('SQLITE_DB_PATH', 'discharges.db')
+SQLITE_DB_PATH = os.environ.get('SQLITE_DB_PATH', 'DOH_AMHD_NO_PII.db')
 
 # MSSQL Configuration (for production)
 MSSQL_CONFIG = {
