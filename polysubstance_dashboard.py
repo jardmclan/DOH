@@ -82,7 +82,7 @@ def load_df():
 
     # These columns are treated as category-like text fields.
     # Here we clean them up to avoid weird blanks or "nan" strings.
-    want_obj = ["county", "region", "residency", "age_group", "sex", "substance"]
+    want_obj = ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]
     for c in want_obj:
         if c in df.columns:
             df[c] = (

@@ -68,11 +68,11 @@ def load_main_dataframe_from_db():
 
     # Make the year column numeric when possible so graphs treat it as numbers
     if "calendar_year" in df.columns:
-        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="ignore")
+        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="coerce")
 
     # For these columns, replace missing values with "Unknown"
     # so we don't get blank labels in filters and tables.
-    for col in ["county", "region", "residency", "age_group", "sex", "substance"]:
+    for col in ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
     return df
@@ -99,8 +99,8 @@ def sort_opts(series):
 # Build the lists of choices for each filter only if the column exists.
 # Why: this makes the code more flexible if the data shape changes later.
 county_opts    = sort_opts(df_raw["county"])    if "county"    in df_raw.columns else []
-region_opts    = sort_opts(df_raw["region"])    if "region"    in df_raw.columns else []
-residency_opts = sort_opts(df_raw["residency"]) if "residency" in df_raw.columns else []
+city_opts      = sort_opts(df_raw["city"])      if "city"      in df_raw.columns else []
+hawaii_resident_opts = sort_opts(df_raw["hawaii_resident"]) if "hawaii_resident" in df_raw.columns else []
 age_opts       = sort_opts(df_raw["age_group"]) if "age_group" in df_raw.columns else []
 sex_opts       = sort_opts(df_raw["sex"])       if "sex"       in df_raw.columns else []
 
@@ -196,17 +196,17 @@ filters_card = dbc.Card(
             persistence=True, persistence_type="session"
         ),
 
-        html.Label("Region", htmlFor="region-filter", tabIndex=3, className="form-label"),
+        html.Label("City", htmlFor="city-filter", tabIndex=3, className="form-label"),
         dcc.Dropdown(
-            id="region-filter", options=opts_list(region_opts), multi=True,
-            placeholder="Region", className="mb-2",
+            id="city-filter", options=opts_list(city_opts), multi=True,
+            placeholder="City", className="mb-2",
             persistence=True, persistence_type="session"
         ),
 
-        html.Label("Residency", htmlFor="residency-filter", tabIndex=4, className="form-label"),
+        html.Label("Hawaii Resident", htmlFor="hawaii-resident-filter", tabIndex=4, className="form-label"),
         dcc.Dropdown(
-            id="residency-filter", options=opts_list(residency_opts), multi=True,
-            placeholder="Residency", className="mb-2",
+            id="hawaii-resident-filter", options=opts_list(hawaii_resident_opts), multi=True,
+            placeholder="Hawaii Resident", className="mb-2",
             persistence=True, persistence_type="session"
         ),
 
@@ -307,12 +307,6 @@ def layout_for(is_mobile: bool = False):
     return dbc.Container(
         [
             skip_link,
-            html.H2(
-                "Substance Use Emergency Discharges — Alt Views (2018–2024)",
-                className="text-white bg-dark p-3 text-center mb-4",
-                tabIndex=0,
-                id="page-title"
-            ),
             dbc.Row([left_col, center_col, right_col], className="g-3")
         ],
         fluid=True,
@@ -334,12 +328,12 @@ layout = layout_for(is_mobile=False)
     Output("table-age", "children"),
     Output("sex-pie", "figure"),
     Input("county-filter", "value"),
-    Input("region-filter", "value"),
-    Input("residency-filter", "value"),
+    Input("city-filter", "value"),
+    Input("hawaii-resident-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
-def update_dashboard(county, region, residency, age, sex):
+def update_dashboard(county, city, hawaii_resident, age, sex):
     """
     This function runs every time the user changes a filter.
 
@@ -367,11 +361,11 @@ def update_dashboard(county, region, residency, age, sex):
     dff = df_raw.copy()
 
     # Only apply filters for columns that actually exist.
-    if "county" in dff.columns:    dff = apply_filter(dff, "county", county)
-    if "region" in dff.columns:    dff = apply_filter(dff, "region", region)
-    if "residency" in dff.columns: dff = apply_filter(dff, "residency", residency)
-    if "age_group" in dff.columns: dff = apply_filter(dff, "age_group", age)
-    if "sex" in dff.columns:       dff = apply_filter(dff, "sex", sex)
+    if "county" in dff.columns:          dff = apply_filter(dff, "county", county)
+    if "city" in dff.columns:            dff = apply_filter(dff, "city", city)
+    if "hawaii_resident" in dff.columns: dff = apply_filter(dff, "hawaii_resident", hawaii_resident)
+    if "age_group" in dff.columns:       dff = apply_filter(dff, "age_group", age)
+    if "sex" in dff.columns:             dff = apply_filter(dff, "sex", sex)
 
     # Drop duplicate record_ids so each record is only counted once.
     dff_uniq = dff.drop_duplicates(subset="record_id")

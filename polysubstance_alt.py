@@ -55,7 +55,7 @@ def load_df():
         raise RuntimeError("Query returned 0 rows.")
 
     # Clean up categorical columns
-    want_obj = ["county", "region", "residency", "age_group", "sex", "substance"]
+    want_obj = ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]
     for c in want_obj:
         if c in df.columns:
             df[c] = (
@@ -361,7 +361,7 @@ def update_heatmap(_, is_mobile):
         text=corr_matrix.values,
         texttemplate='%{text:.2f}',
         textfont={"size": text_size},
-        colorbar=dict(title="Correlation", titleside="right")
+        colorbar=dict(title="Correlation")
     ))
     
     fig.update_layout(

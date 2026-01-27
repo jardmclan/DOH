@@ -62,7 +62,7 @@ def load_main_dataframe_from_db():
 
     # Types/cleaning for charts & filters
     if "calendar_year" in df.columns:
-        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="ignore")
+        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="coerce")
     for col in ["county", "region", "residency", "age_group", "sex", "substance"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")

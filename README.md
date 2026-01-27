@@ -73,6 +73,7 @@ Ensure you have Python installed on your system.
 If the `discharges.db` file is missing or needs to be refreshed with the latest CSV data:
 
 ```bash
+source venv/bin/activate
 python create_db.py
 ```
 
@@ -121,6 +122,7 @@ python -c "from db_utils import test_connection; test_connection()"
 To run the main multi-dashboard application locally:
 
 ```bash
+source venv/bin/activate
 python run_dashboard.py
 ```
 
@@ -159,8 +161,8 @@ gunicorn multi_dashboard:server
 
 The application visualizes data related to:
 
-  * **Demographics**: Patient demographic breakdowns.
-  * **Diagnoses**: Specific focus on substance use (`diag_su`) and polysubstance occurrences.
+  * **discharge_data_view_demographics**: Patient demographic breakdowns.
+  * **discharge_data_view_diag_su**: Specific focus on substance use (`diag_su`) and polysubstance occurrences.
 
 ## ☁️ Deployment
 
@@ -307,7 +309,7 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 
 ### Data & Database Files
 
-**`create_db.py`** - Database initialization script. Loads two CSV files (`discharge_data_view_diag_su.csv` and `discharge_data_view_demographics.csv`), renames columns, and creates database tables (`diagnoses` and `demographics`). Automatically uses SQLite or MSSQL based on configuration.
+**`create_db.py`** - Database initialization script. Loads two CSV files (`discharge_data_view_diag_su.csv` and `discharge_data_view_demographics.csv`), renames columns, and creates database tables (`discharge_data_view_diag_su` and `discharge_data_view_demographics`). Automatically uses SQLite or MSSQL based on configuration.
 
 **`config.py`** - Database configuration module. Manages environment variables and connection settings for both SQLite and MSSQL. Determines which database to use based on `USE_MSSQL` environment variable.
 
@@ -323,7 +325,7 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 
 **`discharge_data_view_diag_su.csv`** - Source data file containing diagnosis/substance use information (record_id, substance, etc.).
 
-**`discharge_data_view_demographics.csv`** - Source data file containing patient demographics (record_id, county, region, age_group, sex, calendar_year, etc.).
+**`discharge_data_view_demographics.csv`** - Source data file containing patient demographics (record_id, county, city, age_group, sex, year, etc.).
 
 ### Utility & Helper Files
 
@@ -355,7 +357,7 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 
 ### Suppressed Data
 
-**`suppressed_exports/`** - Directory containing CSV files with suppressed data aggregations by different dimensions (age_group, calendar_year, county, sex).
+**`suppressed_exports/`** - Directory containing CSV files with suppressed data aggregations by different dimensions (age_group, year, county, sex).
 
 
 
