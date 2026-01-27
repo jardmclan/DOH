@@ -4,6 +4,11 @@ venv/
 __pycache__/
 .ipynb_checkpoints/
 *.pyc
+jens_changes/
+.env
+DOH_AMHD_NO_PII.db
+PlotlyDemo.mp4
+discharge_data_view_diag_mh.csv
 
 # OS stuff
 .DS_Store
