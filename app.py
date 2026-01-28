@@ -76,8 +76,8 @@ app.layout = dbc.Container([
         dbc.Col([
             html.H5("Filters"),
             dcc.Dropdown(df['county'].unique(), id='county-filter', placeholder="Select County"),
-            dcc.Dropdown(df['region'].unique(), id='region-filter', placeholder="Select Region"),
-            dcc.Dropdown(df['residency'].unique(), id='residency-filter', placeholder="Select Residency"),
+            dcc.Dropdown(df['city'].unique(), id='city-filter', placeholder="Select City"),
+            dcc.Dropdown(df['hawaii_resident'].unique(), id='hawaii-resident-filter', placeholder="Select Hawaii Resident"),
             dcc.Dropdown(df['age_group'].unique(), id='age-filter', placeholder="Select Age Group"),
             dcc.Dropdown(df['sex'].unique(), id='sex-filter', placeholder="Select Sex"),
         ], width=3),
@@ -105,16 +105,16 @@ app.layout = dbc.Container([
     Output("table-age", "children"),
     Output("table-sex", "children"),
     Input("county-filter", "value"),
-    Input("region-filter", "value"),
-    Input("residency-filter", "value"),
+    Input("city-filter", "value"),
+    Input("hawaii-resident-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value")
 )
-def update_dashboard(county, region, residency, age, sex):
+def update_dashboard(county, city, hawaii_resident, age, sex):
     dff = df_raw.drop_duplicates(subset='record_id')
     if county: dff = dff[dff['county'] == county]
-    if region: dff = dff[dff['region'] == region]
-    if residency: dff = dff[dff['residency'] == residency]
+    if city: dff = dff[dff['city'] == city]
+    if hawaii_resident: dff = dff[dff['hawaii_resident'] == hawaii_resident]
     if age: dff = dff[dff['age_group'] == age]
     if sex: dff = dff[dff['sex'] == sex]
 
@@ -131,14 +131,14 @@ def update_dashboard(county, region, residency, age, sex):
     substance_fig.update_layout(margin=dict(l=0, r=0, t=30, b=0))
 
     # Year Chart (still rounded)
-    year_data = dff.groupby('calendar_year')['record_id'].nunique().reset_index()
-    year_data.columns = ['calendar_year', 'count']
+    year_data = dff.groupby('year')['record_id'].nunique().reset_index()
+    year_data.columns = ['year', 'count']
     year_data['count'] = year_data['count'].apply(lambda x: int(math.ceil(x / 10.0) * 10))
-    year_data = year_data.sort_values('calendar_year')
+    year_data = year_data.sort_values('year')
     year_fig = px.bar(
         year_data,
-        x='count', y='calendar_year', orientation='h',
-        labels={'count': 'Number of Discharges', 'calendar_year': 'Calendar Year'},
+        x='count', y='year', orientation='h',
+        labels={'count': 'Number of Discharges', 'year': 'Year'},
         title="Discharges by Year"
     )
     year_fig.update_layout(

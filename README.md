@@ -347,11 +347,4 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 
 **`assets/mobile.css`** - Mobile-specific CSS rules that adjust grid layout and component sizing for screens under 768px wide.
 
-### Suppressed Data
-
-**`suppressed_exports/`** - Directory containing CSV files with suppressed data aggregations by different dimensions (age_group, year, county, sex).
-
-
-
-
 Here is a documentation draft for your `README.md` file. It is based on the file structure (e.g., the `assets` folder and `Procfile` strongly suggest a Plotly Dash application) and the data filenames found in your repository.

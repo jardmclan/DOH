@@ -79,7 +79,7 @@ SELECT
   dx.record_id,
   dx.substance,
   m.county, m.city, m.zip, m.hawaii_resident,
-  m.age_group, m.sex, m.year AS calendar_year
+  m.age_group, m.sex, m.year
 FROM dx
 JOIN discharge_data_view_demographics m ON m.record_id = dx.record_id;
 
@@ -105,7 +105,7 @@ SELECT
   u.substance,
   m.county, m.city, m.zip, m.hawaii_resident,
   m.age_group, m.sex,
-  CAST(m.year AS INTEGER) AS calendar_year
+  CAST(m.year AS INTEGER) AS year
 FROM dx_union AS u
 JOIN poly_ids AS p
   ON p.record_id = u.record_id
@@ -178,7 +178,7 @@ SELECT
   co.mh_dx                            AS mh_diagnosis,
   d.county, d.city, d.zip, d.hawaii_resident,
   d.age_group, d.sex,
-  CAST(d.year AS INTEGER)    AS calendar_year
+  CAST(d.year AS INTEGER)    AS year
 FROM co
 JOIN discharge_data_view_demographics d ON d.record_id = co.record_id
 WHERE CAST(d.year AS INTEGER) BETWEEN 2018 AND 2024

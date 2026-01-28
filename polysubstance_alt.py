@@ -64,8 +64,8 @@ def load_df():
                 .fillna("Unknown")
             )
 
-    if "calendar_year" in df.columns:
-        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="coerce").astype("Int64")
+    if "year" in df.columns:
+        df["year"] = pd.to_numeric(df["year"], errors="coerce").astype("Int64")
 
     print(f"[polysubstance_alt] rows={len(df):,}  cols={list(df.columns)}")
     return df
@@ -74,9 +74,9 @@ def load_df():
 df_raw = load_df()
 
 # Filter data: 2018-2024, exclude unknown ages
-if "calendar_year" in df_raw.columns:
-    df_raw["calendar_year"] = pd.to_numeric(df_raw["calendar_year"], errors="coerce").astype("Int64")
-    mask_year = df_raw["calendar_year"].between(2018, 2024, inclusive="both")
+if "year" in df_raw.columns:
+    df_raw["year"] = pd.to_numeric(df_raw["year"], errors="coerce").astype("Int64")
+    mask_year = df_raw["year"].between(2018, 2024, inclusive="both")
 else:
     mask_year = True
 

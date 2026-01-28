@@ -67,8 +67,8 @@ def load_main_dataframe_from_db():
         raise RuntimeError("Query returned 0 rows.")
 
     # Make the year column numeric when possible so graphs treat it as numbers
-    if "calendar_year" in df.columns:
-        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="coerce")
+    if "year" in df.columns:
+        df["year"] = pd.to_numeric(df["year"], errors="coerce")
 
     # For these columns, replace missing values with "Unknown"
     # so we don't get blank labels in filters and tables.
@@ -371,10 +371,10 @@ def update_dashboard(county, city, hawaii_resident, age, sex):
     dff_uniq = dff.drop_duplicates(subset="record_id")
 
     # ---------- Line chart: Discharges by County and Year ----------
-    if {"county", "calendar_year"}.issubset(dff_uniq.columns):
+    if {"county", "year"}.issubset(dff_uniq.columns):
         # Count how many unique records per year + county
         by_cy = (
-            dff_uniq.groupby(["calendar_year", "county"])["record_id"]
+            dff_uniq.groupby(["year", "county"])["record_id"]
             .nunique()
             .reset_index(name="count")
         )
@@ -386,11 +386,11 @@ def update_dashboard(county, city, hawaii_resident, age, sex):
         # Build the line graph
         line_fig = px.line(
             by_cy,
-            x="calendar_year",
+            x="year",
             y="count",
             color="county",
             markers=True,
-            labels={"calendar_year": "Year", "count": "Discharges", "county": "County"},
+            labels={"year": "Year", "count": "Discharges", "county": "County"},
         )
         # Customize hover text and margins for a cleaner look
         line_fig.update_traces(
@@ -405,21 +405,21 @@ def update_dashboard(county, city, hawaii_resident, age, sex):
         line_fig = px.line()
 
     # ---------- Stacked bar chart: Yearly Discharges by Gender ----------
-    if {"calendar_year", "sex"}.issubset(dff_uniq.columns):
+    if {"year", "sex"}.issubset(dff_uniq.columns):
         # Count how many unique records per year + gender
         by_ys = (
-            dff_uniq.groupby(["calendar_year", "sex"])["record_id"]
+            dff_uniq.groupby(["year", "sex"])["record_id"]
             .nunique()
             .reset_index(name="count")
-            .sort_values(["calendar_year", "sex"])
+            .sort_values(["year", "sex"])
         )
         sex_bar = px.bar(
             by_ys,
-            x="calendar_year",
+            x="year",
             y="count",
             color="sex",
             barmode="stack",
-            labels={"calendar_year": "Year", "count": "Discharges", "sex": "Gender"},
+            labels={"year": "Year", "count": "Discharges", "sex": "Gender"},
             # Show the counts inside each bar segment
             text=by_ys["count"].map(lambda x: f"{int(x):,}")
         )
@@ -430,10 +430,10 @@ def update_dashboard(county, city, hawaii_resident, age, sex):
         )
 
         # Calculate total discharges per year to show on top of each stacked bar
-        totals = by_ys.groupby("calendar_year")["count"].sum().reset_index()
+        totals = by_ys.groupby("year")["count"].sum().reset_index()
         for _, row in totals.iterrows():
             sex_bar.add_annotation(
-                x=row["calendar_year"],
+                x=row["year"],
                 y=row["count"],
                 text=f"{int(row['count']):,}",
                 showarrow=False,

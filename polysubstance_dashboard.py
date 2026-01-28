@@ -92,8 +92,8 @@ def load_df():
             )
 
     # Make sure the year column is a proper integer type so graphs order it correctly.
-    if "calendar_year" in df.columns:
-        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="coerce").astype("Int64")
+    if "year" in df.columns:
+        df["year"] = pd.to_numeric(df["year"], errors="coerce").astype("Int64")
 
     # Print some quick info in the console for debugging.
     print(f"[load_df] rows={len(df):,}  cols={list(df.columns)}")
@@ -107,10 +107,10 @@ df_raw = load_df()
 print("[debug] queries.sql path:", Path(QUERIES_PATH).resolve())
 
 # Guard rails: limit years to our window and drop "unknown" ages
-if "calendar_year" in df_raw.columns:
+if "year" in df_raw.columns:
     # Make sure year is numeric and in our chosen range (2018–2024)
-    df_raw["calendar_year"] = pd.to_numeric(df_raw["calendar_year"], errors="coerce").astype("Int64")
-    mask_year = df_raw["calendar_year"].between(2018, 2024, inclusive="both")
+    df_raw["year"] = pd.to_numeric(df_raw["year"], errors="coerce").astype("Int64")
+    mask_year = df_raw["year"].between(2018, 2024, inclusive="both")
 else:
     mask_year = True  # If we don't have a year, don't filter by year
 
@@ -153,7 +153,7 @@ substance_opts = sort_opts(df_raw["substance"]) if "substance" in df_raw.columns
 county_opts    = sort_opts(df_raw["county"])    if "county"    in df_raw.columns else []
 age_opts       = sort_opts(df_raw["age_group"]) if "age_group" in df_raw.columns else []
 sex_opts       = sort_opts(df_raw["sex"])       if "sex"       in df_raw.columns else []
-year_opts      = sorted(df_raw["calendar_year"].dropna().unique().tolist()) if "calendar_year" in df_raw.columns else []
+year_opts      = sorted(df_raw["year"].dropna().unique().tolist()) if "year" in df_raw.columns else []
 
 # Total number of unique records, used for the big KPI card.
 kpi_total = df_raw["record_id"].nunique() if "record_id" in df_raw.columns else 0
@@ -390,7 +390,7 @@ def update(substance, age, sex, county, year):
     if "age_group" in dff.columns:     dff = _apply_filter(dff, "age_group", age)
     if "sex" in dff.columns:           dff = _apply_filter(dff, "sex", sex)
     if "county" in dff.columns:        dff = _apply_filter(dff, "county", county)
-    if "calendar_year" in dff.columns: dff = _apply_filter(dff, "calendar_year", year)
+    if "year" in dff.columns: dff = _apply_filter(dff, "year", year)
 
     # ---------- Bar: Top substances ----------
     if {"substance", "record_id"}.issubset(dff.columns) and not dff.empty:
@@ -432,20 +432,20 @@ def update(substance, age, sex, county, year):
         fig_sub = px.bar()
 
     # ---------- Stacked Bar: Year × County ----------
-    if {"calendar_year", "county", "record_id"}.issubset(dff.columns) and not dff.empty:
+    if {"year", "county", "record_id"}.issubset(dff.columns) and not dff.empty:
         yearly_counts = (
             dff.drop_duplicates("record_id")
-               .groupby(["calendar_year", "county"])["record_id"]
+               .groupby(["year", "county"])["record_id"]
                .nunique().reset_index(name="discharges")
         )
         yearly_counts["label"] = yearly_counts["discharges"].map(lambda x: f"{int(x):,}")
 
         fig_year_county = px.bar(
             yearly_counts,
-            x="calendar_year", y="discharges",
+            x="year", y="discharges",
             color="county",
             barmode="stack",
-            labels={"calendar_year": "Year", "discharges": "Discharges"},
+            labels={"year": "Year", "discharges": "Discharges"},
             text="label",
         )
         fig_year_county.update_layout(

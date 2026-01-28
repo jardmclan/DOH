@@ -61,9 +61,9 @@ def load_main_dataframe_from_db():
         )
 
     # Types/cleaning for charts & filters
-    if "calendar_year" in df.columns:
-        df["calendar_year"] = pd.to_numeric(df["calendar_year"], errors="coerce")
-    for col in ["county", "region", "residency", "age_group", "sex", "substance"]:
+    if "year" in df.columns:
+        df["year"] = pd.to_numeric(df["year"], errors="coerce")
+    for col in ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
 
@@ -84,11 +84,11 @@ def sort_opts(series):
     vals = sorted([v for v in vals if v != "Unknown"]) + (["Unknown"] if "Unknown" in vals.values else [])
     return vals
 
-county_opts    = sort_opts(df_raw["county"])    if "county"    in df_raw.columns else []
-region_opts    = sort_opts(df_raw["region"])    if "region"    in df_raw.columns else []
-residency_opts = sort_opts(df_raw["residency"]) if "residency" in df_raw.columns else []
-age_opts       = sort_opts(df_raw["age_group"]) if "age_group" in df_raw.columns else []
-sex_opts       = sort_opts(df_raw["sex"])       if "sex"       in df_raw.columns else []
+county_opts         = sort_opts(df_raw["county"])         if "county"         in df_raw.columns else []
+city_opts           = sort_opts(df_raw["city"])           if "city"           in df_raw.columns else []
+hawaii_resident_opts = sort_opts(df_raw["hawaii_resident"]) if "hawaii_resident" in df_raw.columns else []
+age_opts            = sort_opts(df_raw["age_group"])      if "age_group"      in df_raw.columns else []
+sex_opts            = sort_opts(df_raw["sex"])            if "sex"            in df_raw.columns else []
 
 
 # ----------------------------
@@ -98,7 +98,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
 app.layout = dbc.Container([
-    html.H2("Substance Use Emergency Discharges (2018–2024)",
+    html.H2("Substance Use Emergency Discharges",
             className="text-white bg-dark p-3 text-center mb-4"),
 
     dbc.Row([
@@ -113,11 +113,11 @@ app.layout = dbc.Container([
             ], className="bg-success text-center mb-4"),
 
             html.H5("Filter Data"),
-            dcc.Dropdown(county_opts,    id="county-filter",    placeholder="County",    className="mb-2"),
-            dcc.Dropdown(region_opts,    id="region-filter",    placeholder="Region",    className="mb-2"),
-            dcc.Dropdown(residency_opts, id="residency-filter", placeholder="Residency", className="mb-2"),
-            dcc.Dropdown(age_opts,       id="age-filter",       placeholder="Age Group", className="mb-2"),
-            dcc.Dropdown(sex_opts,       id="sex-filter",       placeholder="Sex",       className="mb-4"),
+            dcc.Dropdown(county_opts,         id="county-filter",         placeholder="County",         className="mb-2"),
+            dcc.Dropdown(city_opts,           id="city-filter",           placeholder="City",           className="mb-2"),
+            dcc.Dropdown(hawaii_resident_opts, id="hawaii-resident-filter", placeholder="Hawaii Resident", className="mb-2"),
+            dcc.Dropdown(age_opts,            id="age-filter",            placeholder="Age Group",      className="mb-2"),
+            dcc.Dropdown(sex_opts,            id="sex-filter",            placeholder="Sex",            className="mb-4"),
         ], width=3),
 
         # Middle: Graphs
@@ -146,19 +146,19 @@ app.layout = dbc.Container([
     Output("table-age", "children"),
     Output("table-sex", "children"),
     Input("county-filter", "value"),
-    Input("region-filter", "value"),
-    Input("residency-filter", "value"),
+    Input("city-filter", "value"),
+    Input("hawaii-resident-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
-def update_dashboard(county, region, residency, age, sex):
+def update_dashboard(county, city, hawaii_resident, age, sex):
     # 1) Filter FIRST on the full, per-substance dataset
     dff = df_raw.copy()
-    if county:    dff = dff[dff["county"] == county]
-    if region:    dff = dff[dff["region"] == region]
-    if residency: dff = dff[dff["residency"] == residency]
-    if age:       dff = dff[dff["age_group"] == age]
-    if sex:       dff = dff[dff["sex"] == sex]
+    if county:         dff = dff[dff["county"] == county]
+    if city:           dff = dff[dff["city"] == city]
+    if hawaii_resident: dff = dff[dff["hawaii_resident"] == hawaii_resident]
+    if age:            dff = dff[dff["age_group"] == age]
+    if sex:            dff = dff[dff["sex"] == sex]
 
     # 2) Two views:
     #    - dff_poly: keep polysubstance rows (use for substance chart)
@@ -190,17 +190,17 @@ def update_dashboard(county, region, residency, age, sex):
     )
 
     # -------- Year chart (unique records per year, NOT rounded) --------
-    if "calendar_year" in dff_uniq.columns:
-        year_data = dff_uniq.groupby("calendar_year")["record_id"].nunique().reset_index()
-        year_data.columns = ["calendar_year", "count"]
-        year_data = year_data.sort_values("calendar_year")
+    if "year" in dff_uniq.columns:
+        year_data = dff_uniq.groupby("year")["record_id"].nunique().reset_index()
+        year_data.columns = ["year", "count"]
+        year_data = year_data.sort_values("year")
     else:
-        year_data = pd.DataFrame(columns=["calendar_year", "count"])
+        year_data = pd.DataFrame(columns=["year", "count"])
 
     year_fig = px.bar(
         year_data,
-        x="calendar_year", y="count",
-        labels={"count": "Discharges", "calendar_year": "Year"},
+        x="year", y="count",
+        labels={"count": "Discharges", "year": "Year"},
         title="",
         text="count",
     )
