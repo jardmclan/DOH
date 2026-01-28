@@ -77,7 +77,7 @@ app.layout = dbc.Container([
             html.H5("Filters"),
             dcc.Dropdown(df['county'].unique(), id='county-filter', placeholder="Select County"),
             dcc.Dropdown(df['city'].unique(), id='city-filter', placeholder="Select City"),
-            dcc.Dropdown(df['hawaii_resident'].unique(), id='hawaii-resident-filter', placeholder="Select Hawaii Resident"),
+            dcc.Dropdown(df['hawaii_residency'].unique(), id='hawaii-residency-filter', placeholder="Select Hawaii Resident"),
             dcc.Dropdown(df['age_group'].unique(), id='age-filter', placeholder="Select Age Group"),
             dcc.Dropdown(df['sex'].unique(), id='sex-filter', placeholder="Select Sex"),
         ], width=3),
@@ -106,15 +106,15 @@ app.layout = dbc.Container([
     Output("table-sex", "children"),
     Input("county-filter", "value"),
     Input("city-filter", "value"),
-    Input("hawaii-resident-filter", "value"),
+    Input("hawaii-residency-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value")
 )
-def update_dashboard(county, city, hawaii_resident, age, sex):
+def update_dashboard(county, city, hawaii_residency, age, sex):
     dff = df_raw.drop_duplicates(subset='record_id')
     if county: dff = dff[dff['county'] == county]
     if city: dff = dff[dff['city'] == city]
-    if hawaii_resident: dff = dff[dff['hawaii_resident'] == hawaii_resident]
+    if hawaii_residency: dff = dff[dff['hawaii_residency'] == hawaii_residency]
     if age: dff = dff[dff['age_group'] == age]
     if sex: dff = dff[dff['sex'] == sex]
 

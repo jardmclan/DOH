@@ -63,7 +63,7 @@ def load_main_dataframe_from_db():
     # Types/cleaning for charts & filters
     if "year" in df.columns:
         df["year"] = pd.to_numeric(df["year"], errors="coerce")
-    for col in ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]:
+    for col in ["county", "city", "hawaii_residency", "age_group", "sex", "substance"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
 
@@ -86,7 +86,7 @@ def sort_opts(series):
 
 county_opts         = sort_opts(df_raw["county"])         if "county"         in df_raw.columns else []
 city_opts           = sort_opts(df_raw["city"])           if "city"           in df_raw.columns else []
-hawaii_resident_opts = sort_opts(df_raw["hawaii_resident"]) if "hawaii_resident" in df_raw.columns else []
+hawaii_residency_opts = sort_opts(df_raw["hawaii_residency"]) if "hawaii_residency" in df_raw.columns else []
 age_opts            = sort_opts(df_raw["age_group"])      if "age_group"      in df_raw.columns else []
 sex_opts            = sort_opts(df_raw["sex"])            if "sex"            in df_raw.columns else []
 
@@ -115,7 +115,7 @@ app.layout = dbc.Container([
             html.H5("Filter Data"),
             dcc.Dropdown(county_opts,         id="county-filter",         placeholder="County",         className="mb-2"),
             dcc.Dropdown(city_opts,           id="city-filter",           placeholder="City",           className="mb-2"),
-            dcc.Dropdown(hawaii_resident_opts, id="hawaii-resident-filter", placeholder="Hawaii Resident", className="mb-2"),
+            dcc.Dropdown(hawaii_residency_opts, id="hawaii-residency-filter", placeholder="Hawaii Resident", className="mb-2"),
             dcc.Dropdown(age_opts,            id="age-filter",            placeholder="Age Group",      className="mb-2"),
             dcc.Dropdown(sex_opts,            id="sex-filter",            placeholder="Sex",            className="mb-4"),
         ], width=3),
@@ -147,16 +147,16 @@ app.layout = dbc.Container([
     Output("table-sex", "children"),
     Input("county-filter", "value"),
     Input("city-filter", "value"),
-    Input("hawaii-resident-filter", "value"),
+    Input("hawaii-residency-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
-def update_dashboard(county, city, hawaii_resident, age, sex):
+def update_dashboard(county, city, hawaii_residency, age, sex):
     # 1) Filter FIRST on the full, per-substance dataset
     dff = df_raw.copy()
     if county:         dff = dff[dff["county"] == county]
     if city:           dff = dff[dff["city"] == city]
-    if hawaii_resident: dff = dff[dff["hawaii_resident"] == hawaii_resident]
+    if hawaii_residency: dff = dff[dff["hawaii_residency"] == hawaii_residency]
     if age:            dff = dff[dff["age_group"] == age]
     if sex:            dff = dff[dff["sex"] == sex]
 
