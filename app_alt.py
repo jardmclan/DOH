@@ -72,7 +72,7 @@ def load_main_dataframe_from_db():
 
     # For these columns, replace missing values with "Unknown"
     # so we don't get blank labels in filters and tables.
-    for col in ["county", "city", "hawaii_residency", "age_group", "sex", "substance"]:
+    for col in ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
     return df
@@ -100,7 +100,7 @@ def sort_opts(series):
 # Why: this makes the code more flexible if the data shape changes later.
 county_opts    = sort_opts(df_raw["county"])    if "county"    in df_raw.columns else []
 city_opts      = sort_opts(df_raw["city"])      if "city"      in df_raw.columns else []
-hawaii_residency_opts = sort_opts(df_raw["hawaii_residency"]) if "hawaii_residency" in df_raw.columns else []
+hawaii_resident_opts = sort_opts(df_raw["hawaii_resident"]) if "hawaii_resident" in df_raw.columns else []
 age_opts       = sort_opts(df_raw["age_group"]) if "age_group" in df_raw.columns else []
 sex_opts       = sort_opts(df_raw["sex"])       if "sex"       in df_raw.columns else []
 
@@ -205,7 +205,7 @@ filters_card = dbc.Card(
 
         html.Label("Hawaii Resident", htmlFor="hawaii-residency-filter", tabIndex=4, className="form-label"),
         dcc.Dropdown(
-            id="hawaii-residency-filter", options=opts_list(hawaii_residency_opts), multi=True,
+            id="hawaii-residency-filter", options=opts_list(hawaii_resident_opts), multi=True,
             placeholder="Hawaii Resident", className="mb-2",
             persistence=True, persistence_type="session"
         ),
@@ -333,7 +333,7 @@ layout = layout_for(is_mobile=False)
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
-def update_dashboard(county, city, hawaii_residency, age, sex):
+def update_dashboard(county, city, hawaii_resident, age, sex):
     """
     This function runs every time the user changes a filter.
 
@@ -363,7 +363,7 @@ def update_dashboard(county, city, hawaii_residency, age, sex):
     # Only apply filters for columns that actually exist.
     if "county" in dff.columns:          dff = apply_filter(dff, "county", county)
     if "city" in dff.columns:            dff = apply_filter(dff, "city", city)
-    if "hawaii_residency" in dff.columns: dff = apply_filter(dff, "hawaii_residency", hawaii_residency)
+    if "hawaii_resident" in dff.columns: dff = apply_filter(dff, "hawaii_resident", hawaii_resident)
     if "age_group" in dff.columns:       dff = apply_filter(dff, "age_group", age)
     if "sex" in dff.columns:             dff = apply_filter(dff, "sex", sex)
 

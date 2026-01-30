@@ -7,23 +7,23 @@ import sqlite3
 import pandas as pd
 from config import USE_MSSQL, SQLITE_DB_PATH, get_mssql_connection_string, get_connection_info
 
+import os
+print("[db_utils] SQLITE_DB_PATH (absolute):", os.path.abspath(SQLITE_DB_PATH))
+
+
 # Only import pyodbc if we're using MSSQL
 if USE_MSSQL:
     import pyodbc
 
 def get_connection():
-    """
-    Get database connection (SQLite or MSSQL based on config).
-    
-    Returns:
-        Connection object (sqlite3.Connection or pyodbc.Connection)
-    """
     try:
         if USE_MSSQL:
             conn_str = get_mssql_connection_string()
             conn = pyodbc.connect(conn_str)
             print("[db_utils] Successfully connected to MSSQL database")
         else:
+            print("[db_utils] SQLite DB path (raw):", SQLITE_DB_PATH)
+            print("[db_utils] SQLite DB path (absolute):", os.path.abspath(SQLITE_DB_PATH))
             conn = sqlite3.connect(SQLITE_DB_PATH)
             print(f"[db_utils] Successfully connected to SQLite database: {SQLITE_DB_PATH}")
         return conn

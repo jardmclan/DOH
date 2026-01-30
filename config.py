@@ -6,6 +6,8 @@ Set USE_MSSQL environment variable to switch between databases.
 import os
 from dotenv import load_dotenv
 
+from pathlib import Path
+
 # Load environment variables from .env file if it exists
 load_dotenv()
 
@@ -14,7 +16,8 @@ load_dotenv()
 USE_MSSQL = os.environ.get('USE_MSSQL', 'false').lower() in ('true', '1', 'yes')
 
 # SQLite Configuration (for local development)
-SQLITE_DB_PATH = os.environ.get('SQLITE_DB_PATH', 'DOH_AMHD_NO_PII.db')
+BASE_DIR = Path(__file__).resolve().parent
+SQLITE_DB_PATH = BASE_DIR / "DOH_AMHD_NO_PII.db"
 
 # MSSQL Configuration (for production)
 MSSQL_CONFIG = {

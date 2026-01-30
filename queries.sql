@@ -7,7 +7,7 @@ WITH dx AS (
 SELECT
   dx.record_id,
   dx.substance,
-  m.county, m.city, m.zip, m.hawaii_residency,
+  m.county, m.city, m.zip, m.hawaii_resident,
   m.age_group, m.sex, m.year
 FROM dx
 JOIN discharge_data_view_demographics m ON m.record_id = dx.record_id;
@@ -32,7 +32,7 @@ poly_ids AS (
 SELECT
   u.record_id,
   u.substance,
-  m.county, m.city, m.zip, m.hawaii_residency,
+  m.county, m.city, m.zip, m.hawaii_resident,
   m.age_group, m.sex,
   CAST(m.year AS INTEGER) AS year
 FROM dx_union AS u
@@ -68,7 +68,7 @@ SELECT
   co.record_id,
   co.sud_substance                    AS su_diagnosis,
   co.mh_dx                            AS mh_diagnosis,
-  d.county, d.city, d.zip, d.hawaii_residency,
+  d.county, d.city, d.zip, d.hawaii_resident,
   d.age_group, d.sex,
   CAST(d.year AS INTEGER)    AS year
 FROM co
