@@ -391,11 +391,9 @@ def update_dashboard(county, city, hawaii_resident, age, sex):
             color="county",
             markers=True,
             labels={"year": "Year", "count": "Discharges", "county": "County"},
-            text="count"
         )
         # Customize hover text and margins for a cleaner look
         line_fig.update_traces(
-            textposition="top center", 
             hovertemplate="Year %{x}<br>%{y:,} discharges<extra></extra>"
         )
         line_fig.update_layout(
