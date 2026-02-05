@@ -55,7 +55,7 @@ def load_df():
         raise RuntimeError("Query returned 0 rows.")
 
     # Clean up categorical columns
-    want_obj = ["county", "city", "hawaii_resident", "age_group", "sex", "substance"]
+    want_obj = ["county", "city", "hawaii_residency", "age_group", "sex", "substance"]
     for c in want_obj:
         if c in df.columns:
             df[c] = (
