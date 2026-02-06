@@ -25,28 +25,7 @@ def load_sql_query(name, path="queries.sql"):
 conn = sqlite3.connect("DOH_AMHD_NO_PII.db")
 
 df_raw = pd.read_sql_query(load_sql_query("load_main_data"), conn)
-distinct_counts = pd.read_sql_query(load_sql_query("count_by_sex_distinct"), conn)
-raw_counts = pd.read_sql_query(load_sql_query("count_by_sex_raw"), conn)
-duplicates = pd.read_sql_query(load_sql_query("find_duplicates"), conn)
-duplicates1 = pd.read_sql_query(load_sql_query("find_duplicates1"), conn)
-duplicates3 = pd.read_sql_query(load_sql_query("find_duplicates3"), conn)
 conn.close()
-
-# Print comparison
-print("\n📊 COUNT(DISTINCT d.record_id) by sex:")
-for index, row in distinct_counts.iterrows():
-    print(f" - {row['sex']}: {row['discharges']:,}")
-
-print("\n📉 COUNT(*) by sex (Power BI style):")
-for index, row in raw_counts.iterrows():
-    print(f" - {row['sex']}: {row['discharges']:,}")
-
-print("\n🔍 Duplicate record_id entries in diagnoses:")
-print(f"Total duplicates found: {len(duplicates)}")
-if not duplicates.empty:
-    print(duplicates.head())
-    print(duplicates3.head())
-    print(duplicates1.head())
 
 # Compute total
 df = df_raw.drop_duplicates(subset='record_id')
