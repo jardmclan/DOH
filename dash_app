@@ -7,5 +7,15 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # 1. Modern way: Allows only your WordPress site to embed this app
+        add_header Content-Security-Policy "frame-ancestors 'self' https://bh808.hawaii.gov/ https://bh808.hawaii.gov/";
+
+        # 2. Legacy way: For older browsers (only allows one domain)
+        # Note: Some browsers ignore this if CSP (above) is present
+        add_header X-Frame-Options "ALLOW-FROM https://bh808.hawaii.gov/";
+        
+        # 3. Security: Prevent browsers from "sniffing" the asset type
+        add_header X-Content-Type-Options nosniff;
     }
 }
