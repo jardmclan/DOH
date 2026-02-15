@@ -98,6 +98,7 @@ def sort_opts(series):
 
 # Build the lists of choices for each filter only if the column exists.
 # Why: this makes the code more flexible if the data shape changes later.
+substance_opts = sort_opts(df_raw["substance"]) if "substance" in df_raw.columns else []
 county_opts    = sort_opts(df_raw["county"])    if "county"    in df_raw.columns else []
 city_opts      = sort_opts(df_raw["city"])      if "city"      in df_raw.columns else []
 hawaii_residency_opts = sort_opts(df_raw["hawaii_residency"]) if "hawaii_residency" in df_raw.columns else []
@@ -189,6 +190,13 @@ filters_card = dbc.Card(
     dbc.CardBody([
         html.H5("Filter Data", tabIndex=1),
 
+        html.Label("Substance", htmlFor="substance-filter", tabIndex=2, className="form-label"),
+        dcc.Dropdown(
+            id="substance-filter", options=opts_list(substance_opts), multi=True,
+            placeholder="Substance", className="mb-2",
+            persistence=True, persistence_type="session"
+        ),
+
         html.Label("County", htmlFor="county-filter", tabIndex=2, className="form-label"),
         dcc.Dropdown(
             id="county-filter", options=opts_list(county_opts), multi=True,
@@ -247,6 +255,13 @@ def layout_for(is_mobile: bool = False):
     # Center column: the main line and bar charts.
     center_col = dbc.Col(
         [
+            graph_block("bar-substances", "Discharges by Substance", bar_h),
+            # Screen-reader description only; not visible on screen.
+            html.P(
+                "Bar chart of discharges by substance.",
+                className="sr-only"
+            ),
+            
             graph_block("county-year-lines", "Discharges by County and Year", line_h),
             # Screen-reader description only; not visible on screen.
             html.P(
@@ -322,18 +337,20 @@ layout = layout_for(is_mobile=False)
 # ----------------------------
 
 @callback(
+    Output("bar-substances", "figure"),
     Output("county-year-lines", "figure"),
     Output("sex-year-stacked", "figure"),
     Output("table-county", "children"),
     Output("table-age", "children"),
     Output("sex-pie", "figure"),
+    Input("substance-filter", "value"),
     Input("county-filter", "value"),
     Input("city-filter", "value"),
     Input("hawaii-residency-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
-def update_dashboard(county, city, hawaii_residency, age, sex):
+def update_dashboard(substance, county, city, hawaii_residency, age, sex):
     """
     This function runs every time the user changes a filter.
 
@@ -361,6 +378,7 @@ def update_dashboard(county, city, hawaii_residency, age, sex):
     dff = df_raw.copy()
 
     # Only apply filters for columns that actually exist.
+    if "substance" in dff.columns:       dff = apply_filter(dff, "substance", substance)
     if "county" in dff.columns:          dff = apply_filter(dff, "county", county)
     if "city" in dff.columns:            dff = apply_filter(dff, "city", city)
     if "hawaii_residency" in dff.columns: dff = apply_filter(dff, "hawaii_residency", hawaii_residency)
@@ -369,6 +387,52 @@ def update_dashboard(county, city, hawaii_residency, age, sex):
 
     # Drop duplicate record_ids so each record is only counted once.
     dff_uniq = dff.drop_duplicates(subset="record_id")
+
+    # ---------- Stacked bar chart: Discharges by Substance ----------
+    if {"substance"}.issubset(dff_uniq.columns):
+        by_sub = (
+            dff_uniq.groupby("substance")["record_id"]
+            .nunique()
+            .reset_index(name="count")
+            .sort_values("count", ascending=True)
+        )
+
+        def ellipsize(text, max_len=25):
+            if text is None:
+                return text
+            return text if len(text) <= max_len else text[:max_len] + "..."
+
+        # Cuts off label length after 25 characters
+        by_sub["substance_label"] = by_sub["substance"].apply(ellipsize)
+
+        # Hides numbers to "<10" if it is less than or equal to 10
+        by_sub["display_count"] = by_sub["count"].apply(
+            lambda x: "<10" if x <= 10 else f"{int(x):,}"
+        )
+
+        sub_bar = px.bar(
+            by_sub,
+            x="count",
+            y="substance_label",
+            barmode="stack",
+            text="display_count",
+            labels={"count": "Number of Discharges", "substance_label": "Substance Type"},
+        )
+        
+        sub_bar.update_traces(
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate="Substance Type: %{customdata}<br>Number of discharges: %{text}<extra></extra>",
+            customdata=by_sub["substance"]
+        )
+
+        sub_bar.update_layout(
+            margin=dict(l=0, r=0, t=10, b=80),
+            xaxis=dict(automargin=True),
+        )
+
+    else:
+        sub_bar = px.bar()
 
     # ---------- Line chart: Discharges by County and Year ----------
     if {"county", "year"}.issubset(dff_uniq.columns):
@@ -506,6 +570,7 @@ def update_dashboard(county, city, hawaii_residency, age, sex):
 
     # Return all the updated visuals and tables to Dash
     return (
+        sub_bar,
         line_fig,
         sex_bar,
         tbl("county"),
