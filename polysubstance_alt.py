@@ -197,16 +197,21 @@ def layout_for(is_mobile: bool = False):
                         ], className="text-muted mb-3"),
                         dcc.Loading(
                             html.Div(
-                                html.Div(
-                                    dcc.Graph(
-                                        id="alt-heatmap",
-                                        config={"displayModeBar": True, "displaylogo": False},
-                                        style={"height": "600px"}  # Fixed height for both mobile and desktop
-                                    ),
-                                    className="graph-inner" if is_mobile else ""
+                                dcc.Graph(
+                                    id="alt-heatmap",
+                                    config={"displayModeBar": True, "displaylogo": False},
+                                    style={
+                                        # Fixed height for both mobile and desktop
+                                        "height": "600px",
+                                        "minWidth": "1500px"
+                                    }
                                 ),
-                                className="heatmap-scroll" if is_mobile else ""
-                            )
+                                style={
+                                    "overflowX": "auto",
+                                },
+                                className="graph-inner" if is_mobile else ""
+                            ),
+                            className="heatmap-scroll" if is_mobile else ""
                         )
                     ])
                 ])
