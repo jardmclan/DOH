@@ -366,6 +366,9 @@ def layout_for(is_mobile: bool = False):
         dbc.Row([left, center, right], className="g-3"),
     ], fluid=True)
 
+
+
+
 # Keep desktop default layout for older code that imports `layout` directly.
 layout = layout_for(is_mobile=False)
 

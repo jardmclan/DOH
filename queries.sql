@@ -75,3 +75,22 @@ FROM co
 JOIN discharge_data_view_demographics d ON d.record_id = co.record_id
 WHERE CAST(d.year AS INTEGER) BETWEEN 2018 AND 2024
   AND LOWER(COALESCE(NULLIF(TRIM(d.age_group), ''), 'unknown')) <> 'unknown';
+
+
+-- name: load_dose_data
+WITH dx AS (
+  SELECT DISTINCT record_id, TRIM(diagnosis) AS substance
+  FROM nonfatal_overdose_poisonings
+  WHERE diagnosis IS NOT NULL AND TRIM(diagnosis) <> ''
+)
+SELECT
+  dx.record_id,
+  dx.substance,
+  m.county,
+  m.city,
+  m.hawaii_residency,
+  m.age_group,
+  m.sex,
+  m.year
+FROM dx
+JOIN discharge_data_view_demographics m ON m.record_id = dx.record_id;

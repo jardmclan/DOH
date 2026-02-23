@@ -9,6 +9,7 @@ jens_changes/
 DOH_AMHD_NO_PII.db
 PlotlyDemo.mp4
 discharge_data_view_diag_mh.csv
+dose_data.csv
 
 # OS stuff
 .DS_Store

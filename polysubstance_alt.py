@@ -207,6 +207,7 @@ def layout_for(is_mobile: bool = False):
                                     }
                                 ),
                                 style={
+                                    # handles horizontal scrolling on smaller screen sizes (mobile)
                                     "overflowX": "auto",
                                 },
                                 className="graph-inner" if is_mobile else ""

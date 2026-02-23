@@ -10,7 +10,6 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, callback
 import plotly.express as px
 from theme import register_template
-
 # This applies our custom Plotly theme (colors, fonts, etc.)
 # so all graphs match the rest of the dashboard.
 register_template()
@@ -81,7 +80,6 @@ def load_main_dataframe_from_db():
 # The callbacks will reuse this instead of hitting the database every time.
 df_raw = load_main_dataframe_from_db()
 
-
 # Count how many unique records we have to show on the KPI card.
 total_unique = df_raw["record_id"].nunique()
 
@@ -111,6 +109,23 @@ def opts_list(values):
     drop-down choices (label + value).
     """
     return [{"label": v, "value": v} for v in values]
+
+# Load the DOSE dataset once at startup.
+# The callbacks will reuse this instead of hitting the database every time.
+sql_dose = load_sql_query("load_dose_data")
+df_dose_raw = execute_query(sql_dose)
+
+# Count how many unique DOSE records we have to show on the KPI card.
+total_dose_unique = df_dose_raw["record_id"].nunique()
+
+# Build the lists of choices for each filter only if the column exists.
+# Why: this makes the code more flexible if the data shape changes later.
+dose_substance_opts = sort_opts(df_dose_raw["substance"]) if "substance" in df_dose_raw.columns else []
+dose_county_opts    = sort_opts(df_dose_raw["county"])    if "county"    in df_dose_raw.columns else []
+dose_city_opts      = sort_opts(df_dose_raw["city"])      if "city"      in df_dose_raw.columns else []
+dose_residency_opts = sort_opts(df_dose_raw["hawaii_residency"]) if "hawaii_residency" in df_dose_raw.columns else []
+dose_age_opts       = sort_opts(df_dose_raw["age_group"]) if "age_group" in df_dose_raw.columns else []
+dose_sex_opts       = sort_opts(df_dose_raw["sex"])       if "sex"       in df_dose_raw.columns else []
 
 # ----------------------------
 # Reusable graph block (Tools toggle + title + graph)
@@ -236,6 +251,58 @@ filters_card = dbc.Card(
     className="mb-4"
 )
 
+filters_card_dose = dbc.Card(
+    dbc.CardBody([
+        html.H5("Filter DOSE Data"),
+
+        html.Label("Substance", htmlFor="substance-filter-dose", className="form-label"),
+        dcc.Dropdown(
+            id="substance-filter-dose",
+            options=opts_list(dose_substance_opts),
+            multi=True,
+            placeholder="Substance",
+            className="mb-2"
+        ),
+
+        html.Label("County", htmlFor="county-filter-dose", className="form-label"),
+        dcc.Dropdown(
+            id="county-filter-dose",
+            options=opts_list(dose_county_opts),
+            multi=True,
+            placeholder="County",
+            className="mb-2"
+        ),
+        html.Label("City", htmlFor="city-filter-dose", tabIndex=3, className="form-label"),
+        dcc.Dropdown(
+            id="city-filter-dose", options=opts_list(dose_city_opts), multi=True,
+            placeholder="City", className="mb-2",
+            persistence=True, persistence_type="session"
+        ),
+        html.Label("Hawaii Resident", htmlFor="hawaii-residency-filter-dose", tabIndex=4, className="form-label"),
+        dcc.Dropdown(
+            id="hawaii-residency-filter-dose", options=opts_list(dose_residency_opts), multi=True,
+            placeholder="Hawaii Resident", className="mb-2",
+            persistence=True, persistence_type="session"
+        ),
+
+        html.Label("Age Group", htmlFor="age-filter-dose", tabIndex=5, className="form-label"),
+        dcc.Dropdown(
+            id="age-filter-dose", options=opts_list(dose_age_opts), multi=True,
+            placeholder="Age Group", className="mb-2",
+            persistence=True, persistence_type="session"
+        ),
+
+        html.Label("Sex", htmlFor="sex-filter-dose", tabIndex=6, className="form-label"),
+        dcc.Dropdown(
+            id="sex-filter-dose", options=opts_list(dose_sex_opts), multi=True,
+            placeholder="Sex", className="mb-0",
+            persistence=True, persistence_type="session"
+        ),
+    ]),
+    id="dose-filters",
+    className="mb-4"
+)
+
 def layout_for(is_mobile: bool = False):
     """
     Build the full page layout, with slightly different heights if we
@@ -256,23 +323,15 @@ def layout_for(is_mobile: bool = False):
     center_col = dbc.Col(
         [
             graph_block("bar-substances", "Discharges by Substance", bar_h),
-            # Screen-reader description only; not visible on screen.
-            html.P(
-                "Bar chart of discharges by substance.",
-                className="sr-only"
-            ),
+            html.P("Bar chart of discharges by substance.", className="sr-only"),
             
             graph_block("county-year-lines", "Discharges by County and Year", line_h),
             # Screen-reader description only; not visible on screen.
-            html.P(
-                "Line chart of discharges by county over time. Use the legend to toggle counties.",
-                className="sr-only"
-            ),
+            html.P("Line chart of discharges by county over time. Use the legend to toggle counties.", className="sr-only"),
+            
             graph_block("sex-year-stacked", "Yearly Discharges by Gender", bar_h),
-            html.P(
-                "Stacked bar chart of yearly discharges by gender. Use the legend to toggle categories.",
-                className="sr-only"
-            ),
+            html.P("Stacked bar chart of yearly discharges by gender. Use the legend to toggle categories.", className="sr-only"),
+
         ],
         xs=12, md=6
     )
@@ -318,15 +377,82 @@ def layout_for(is_mobile: bool = False):
         xs=12, md=3
     )
 
+    sql = load_sql_query("load_dose_data")
+    dose_df = execute_query(sql)
+
+    total_dose_unique = dose_df["record_id"].nunique()
+
     # Wrap everything in a fluid container so it stretches with the screen.
-    return dbc.Container(
-        [
-            skip_link,
-            dbc.Row([left_col, center_col, right_col], className="g-3")
-        ],
-        fluid=True,
-        className="p-2"
-    )
+    return dbc.Container([
+        skip_link,
+        dbc.Row([left_col, center_col, right_col], className="g-3"),
+
+        html.Hr(className="my-5"),
+
+        dbc.Row([
+            dbc.Col([
+                dbc.Card(
+                    # KPI card
+                    dbc.CardBody([
+                        html.H2(f"{total_dose_unique:,}", className="text-white"),
+                        html.Small("Distinct discharges per Drug Overdose Surveillance and Epidemiology (DOSE) definitions", className="text-white-50")
+                    ]),
+                    className="bg-success text-center mb-4"
+                ),
+                # Filters
+                filters_card_dose,
+            ], xs=12, md=3),
+
+            dbc.Col([
+                # Graph of overdoses relating to drug poisonings
+                graph_block("bar-dose", "Nonfatal Overdoses Related to Drug Poisonings", bar_h),
+                html.P("Bar chart of discharges of nonfatal overdoses relating to drug poisonings.", className="sr-only"),
+
+                # Line graph of year and substances
+                graph_block("year-diagnosis-lines-dose", "DOSE Discharges by Year and Substance", line_h),
+                # Screen-reader description only; not visible on screen.
+                html.P("Line chart of discharges by substance over time. Use the legend to toggle substances.", className="sr-only"),
+            ], xs=12, md=6),
+
+
+            dbc.Col(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    html.H6("By County", className="mb-2"),
+                                    html.Div(
+                                        id="table-county-dose",
+                                        className="mobile-side-table",
+                                        style={"overflowX": "auto"}
+                                    ),
+                                ],
+                                xs=6, md=12, className="pe-1 mb-3",
+                            ),
+                            dbc.Col(
+                                [
+                                    html.H6("By Age Group", className="mb-2"),
+                                    html.Div(
+                                        id="table-age-dose",
+                                        className="mobile-side-table",
+                                        style={"overflowX": "auto"}
+                                    ),
+                                ],
+                                xs=6, md=12, className="ps-1 mb-3",
+                            ),
+                        ],
+                        className="g-2"
+                    ),
+                    graph_block("sex-pie-dose", "Discharges by Gender", pie_h),
+                    html.P("Pie chart of DOSE discharges by gender.", className="sr-only"),
+                ],
+                xs=12, md=3
+            )
+        ], className="g-3")
+
+    ], fluid=True, className="p-2")
+
 
 # This is the default layout used when the app imports this file.
 # We pass False here since desktop is the standard case.
@@ -350,6 +476,8 @@ layout = layout_for(is_mobile=False)
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
+
+
 def update_dashboard(substance, county, city, hawaii_residency, age, sex):
     """
     This function runs every time the user changes a filter.
@@ -388,7 +516,7 @@ def update_dashboard(substance, county, city, hawaii_residency, age, sex):
     # Drop duplicate record_ids so each record is only counted once.
     dff_uniq = dff.drop_duplicates(subset="record_id")
 
-    # ---------- Stacked bar chart: Discharges by Substance ----------
+    # ---------- Bar chart: Discharges by Substance ----------
     if {"substance"}.issubset(dff_uniq.columns):
         by_sub = (
             dff_uniq.groupby("substance")["record_id"]
@@ -575,7 +703,190 @@ def update_dashboard(substance, county, city, hawaii_residency, age, sex):
         sex_bar,
         tbl("county"),
         tbl("age_group", ["<18", "18-44", "45-64", "65-74", "75+", "Unknown"]),
-        sex_pie
+        sex_pie,
+    )
+
+@callback(
+    Output("bar-dose", "figure"),
+    Output("year-diagnosis-lines-dose", "figure"),
+    Output("table-county-dose", "children"),
+    Output("table-age-dose", "children"),
+    Output("sex-pie-dose", "figure"),
+    Input("substance-filter-dose", "value"),
+    Input("county-filter-dose", "value"),
+    Input("city-filter-dose", "value"),
+    Input("hawaii-residency-filter-dose", "value"),
+    Input("age-filter-dose", "value"),
+    Input("sex-filter-dose", "value"),
+
+)
+
+def update_dose_section(substance, county, city, hawaii_residency, age, sex):
+
+    def apply_filter(frame, col, val):
+        """
+        Small helper so we don't repeat the same filter logic.
+
+        If the user did not pick anything, we leave the data alone.
+        If they picked one or more values, we only keep matching rows.
+        """
+        if val is None or (isinstance(val, (list, tuple)) and len(val) == 0):
+            return frame
+        if isinstance(val, (list, tuple)):
+            return frame[frame[col].isin(val)]
+        return frame[frame[col] == val]
+    
+    # DOSE data
+    dose_df = df_dose_raw.copy()
+
+    # Only apply filters for columns that actually exist.
+    if "substance" in dose_df.columns:          dose_df = apply_filter(dose_df, "substance", substance)
+    if "county" in dose_df.columns:             dose_df = apply_filter(dose_df, "county", county)
+    if "city" in dose_df.columns:               dose_df = apply_filter(dose_df, "city", city)
+    if "hawaii_residency" in dose_df.columns:   dose_df = apply_filter(dose_df, "hawaii_residency", hawaii_residency)
+    if "age_group" in dose_df.columns:          dose_df = apply_filter(dose_df, "age_group", age)
+    if "sex" in dose_df.columns:                dose_df = apply_filter(dose_df, "sex", sex)
+
+    # Drop duplicate record_ids so each record is only counted once.
+    dose_df_uniq = dose_df.drop_duplicates(subset="record_id")
+
+
+    # ---------- Bar chart: Nonfatal overdoses related to poisonings ----------
+    if {"substance"}.issubset(dose_df.columns):
+        by_dose = (
+            dose_df.groupby("substance")["record_id"]
+            .nunique()
+            .reset_index(name="count")
+            .sort_values("count", ascending=True)
+        )
+
+        def ellipsize(text, max_len=25):
+            if text is None:
+                return text
+            return text if len(text) <= max_len else text[:max_len] + "..."
+        
+        # Cuts off label length after 25 characters
+        by_dose["substance_label"] = by_dose["substance"].apply(ellipsize)
+
+        # Hides numbers to "<10" if it is less than or equal to 10
+        by_dose["display_count"] = by_dose["count"].apply(
+            lambda x: "<10" if x <= 10 else f"{int(x):,}"
+        )
+
+        dose_bar = px.bar(
+            by_dose,
+            x="count",
+            y="substance_label",
+            text="display_count",
+            labels={"count": "Number of Discharges (Not mutually exclusive)", "substance_label": "Substance Type"},
+        )
+        
+        dose_bar.update_traces(
+            textposition="outside",
+            cliponaxis=False,
+            customdata=dose_df["substance"],
+            hovertemplate="Substance: %{customdata}<br>Count: %{text}<extra></extra>"
+        )
+
+        dose_bar.update_layout(margin=dict(l=0, r=40, t=10, b=10))
+    else:
+        dose_bar = px.bar()
+
+
+    # ---------- Line chart: Discharges by Year and Substance ----------
+    if {"year", "substance"}.issubset(dose_df.columns):
+        # Count how many unique records per year + county
+        by_year_substance = (
+            dose_df.groupby(["year", "substance"])["record_id"]
+            .nunique()
+            .reset_index(name="count")
+        )
+        # Order substances in a consistent way for the legend
+        substances = sort_opts(dose_df["substance"]) if "substance" in dose_df.columns else []
+        if substances:
+            by_year_substance["substance"] = pd.Categorical(by_year_substance["substance"], categories=substances, ordered=True)
+
+        # Build the line graph
+        dose_line = px.line(
+            by_year_substance,
+            x="year",
+            y="count",
+            color="substance",
+            markers=True,
+            labels={"year": "Year", "count": "Discharges", "substance": "Substance"},
+        )
+        # Customize hover text and margins for a cleaner look
+        dose_line.update_traces(
+            hovertemplate="Year %{x}<br>%{y:,} discharges<extra></extra>"
+        )
+        dose_line.update_layout(
+            margin=dict(l=0, r=20, t=10, b=0),
+            xaxis=dict(dtick=1)
+        )
+    else:
+        # If we don't have the needed columns, return an empty figure
+        dose_line = px.line()
+
+    # ---------- Helper for the summary tables ----------
+    def tbl(column, categories=None):
+        """
+        Build a small table that shows the count of unique records
+        for each value in the chosen column.
+
+        If we pass in a list of categories, we use that order in the table.
+        """
+        if column not in dose_df_uniq.columns:
+            return dbc.Alert(
+                f"Column '{column}' not found.",
+                color="warning",
+                className="mb-0"
+            )
+
+        # Count records per category
+        g = dose_df_uniq.groupby(column)["record_id"].nunique().reset_index()
+        g.columns = [column, "count"]
+
+        # Use the given category order if provided
+        if categories:
+            g[column] = pd.Categorical(g[column], categories=categories, ordered=True)
+            g = g.sort_values(column)
+
+        # Make the counts look nicer with commas
+        g["count"] = g["count"].map(lambda x: f"{int(x):,}")
+
+        # Build a styled table for the dashboard
+        return dbc.Table.from_dataframe(g, striped=True, bordered=True, hover=True)
+    
+    # ---------- Pie chart: Discharges by Gender ----------
+    if "sex" in dose_df.columns:
+        pie_df = (
+            dose_df.groupby("sex")["record_id"]
+            .nunique()
+            .reset_index(name="count")
+            .sort_values("count", ascending=False)
+        )
+        dose_sex_pie = px.pie(
+            pie_df,
+            names="sex",
+            values="count",
+            hole=0.35
+        )
+        dose_sex_pie.update_traces(
+            textposition="inside",
+            texttemplate="%{label}<br>%{percent:.1%} (%{value:,})",
+            hovertemplate="%{label}: %{value:,} (%{percent:.1%})"
+        )
+        dose_sex_pie.update_layout(margin=dict(l=0, r=0, t=10, b=0))
+    else:
+        dose_sex_pie = px.pie()
+
+    # Return all the updated visuals and tables to Dash
+    return (
+        dose_bar,
+        dose_line,
+        tbl("county"),
+        tbl("age_group", ["<18", "18-44", "45-64", "65-74", "75+", "Unknown"]),
+        dose_sex_pie,
     )
 
 # ----------------------------
@@ -652,4 +963,21 @@ def _btn_pie(n, cur):
     """
     Same toggle behavior for the pie chart.
     """
+    return not bool(cur)
+
+# callbacks for bar_dose graph
+@callback(
+    Output("bar-dose-title", "style"),
+    Input("bar-dose-store", "data"),
+)
+def _toggle_dose_cfg(show):
+    return {"display": "none"} if show else {}
+
+@callback(
+    Output("bar-dose-store", "data"),
+    Input("bar-dose-btn", "n_clicks"),
+    State("bar-dose-store", "data"),
+    prevent_initial_call=True
+)
+def _btn_dose(n, cur):
     return not bool(cur)
