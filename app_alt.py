@@ -194,7 +194,6 @@ kpi_card = dbc.Card(
     dbc.CardBody([
         html.H4("Total Discharges", className="card-title text-white"),
         html.H2(f"{total_unique:,}", className="text-white"),
-        html.Small("Count of unique records from 2018 to 2024", className="text-white-50")
     ]),
     className="bg-success text-center mb-4"
 )
