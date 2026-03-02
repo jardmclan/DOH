@@ -45,8 +45,6 @@ WHERE
   AND LOWER(COALESCE(NULLIF(TRIM(m.age_group), ''), 'unknown')) <> 'unknown';  -- drop Unknown/blank ages
 
 
-
-
 -- name: load_sud_primary_mh_secondary_v2
 WITH
 sud_union AS (

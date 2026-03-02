@@ -71,7 +71,7 @@ def load_main_dataframe_from_db():
 
     # For these columns, replace missing values with "Unknown"
     # so we don't get blank labels in filters and tables.
-    for col in ["county", "city", "hawaii_residency", "age_group", "sex", "substance"]:
+    for col in ["county", "city", "hawaii_residency", "age_group", "sex", "substance", "year"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
     return df
@@ -96,12 +96,13 @@ def sort_opts(series):
 
 # Build the lists of choices for each filter only if the column exists.
 # Why: this makes the code more flexible if the data shape changes later.
-substance_opts = sort_opts(df_raw["substance"]) if "substance" in df_raw.columns else []
-county_opts    = sort_opts(df_raw["county"])    if "county"    in df_raw.columns else []
-city_opts      = sort_opts(df_raw["city"])      if "city"      in df_raw.columns else []
-hawaii_residency_opts = sort_opts(df_raw["hawaii_residency"]) if "hawaii_residency" in df_raw.columns else []
-age_opts       = sort_opts(df_raw["age_group"]) if "age_group" in df_raw.columns else []
-sex_opts       = sort_opts(df_raw["sex"])       if "sex"       in df_raw.columns else []
+substance_opts = sort_opts(df_raw["substance"])                     if "substance"          in df_raw.columns else []
+county_opts    = sort_opts(df_raw["county"])                        if "county"             in df_raw.columns else []
+city_opts      = sort_opts(df_raw["city"])                          if "city"               in df_raw.columns else []
+year_opts      = sorted(df_raw["year"].dropna().unique().tolist())  if "year"               in df_raw.columns else []
+hawaii_residency_opts = sort_opts(df_raw["hawaii_residency"])       if "hawaii_residency"   in df_raw.columns else []
+age_opts       = sort_opts(df_raw["age_group"])                     if "age_group"          in df_raw.columns else []
+sex_opts       = sort_opts(df_raw["sex"])                           if "sex"                in df_raw.columns else []
 
 def opts_list(values):
     """
@@ -120,12 +121,13 @@ total_dose_unique = df_dose_raw["record_id"].nunique()
 
 # Build the lists of choices for each filter only if the column exists.
 # Why: this makes the code more flexible if the data shape changes later.
-dose_substance_opts = sort_opts(df_dose_raw["substance"]) if "substance" in df_dose_raw.columns else []
-dose_county_opts    = sort_opts(df_dose_raw["county"])    if "county"    in df_dose_raw.columns else []
-dose_city_opts      = sort_opts(df_dose_raw["city"])      if "city"      in df_dose_raw.columns else []
-dose_residency_opts = sort_opts(df_dose_raw["hawaii_residency"]) if "hawaii_residency" in df_dose_raw.columns else []
-dose_age_opts       = sort_opts(df_dose_raw["age_group"]) if "age_group" in df_dose_raw.columns else []
-dose_sex_opts       = sort_opts(df_dose_raw["sex"])       if "sex"       in df_dose_raw.columns else []
+dose_substance_opts = sort_opts(df_dose_raw["substance"])                       if "substance"  in df_dose_raw.columns else []
+dose_county_opts    = sort_opts(df_dose_raw["county"])                          if "county"     in df_dose_raw.columns else []
+dose_city_opts      = sort_opts(df_dose_raw["city"])                            if "city"       in df_dose_raw.columns else []
+dose_year_opts      = sorted(df_dose_raw["year"].dropna().unique().tolist())    if "year"       in df_dose_raw.columns else []
+dose_residency_opts = sort_opts(df_dose_raw["hawaii_residency"])                if "hawaii_residency" in df_dose_raw.columns else []
+dose_age_opts       = sort_opts(df_dose_raw["age_group"])                       if "age_group"  in df_dose_raw.columns else []
+dose_sex_opts       = sort_opts(df_dose_raw["sex"])                             if "sex"        in df_dose_raw.columns else []
 
 # ----------------------------
 # Reusable graph block (Tools toggle + title + graph)
@@ -225,6 +227,13 @@ filters_card = dbc.Card(
             persistence=True, persistence_type="session"
         ),
 
+        html.Label("Year", htmlFor="year-filter", tabIndex=3, className="form-label"),
+        dcc.Dropdown(
+            id="year-filter", options=opts_list(year_opts), multi=True,
+            placeholder="Year", className="mb-2",
+            persistence=True, persistence_type="session"
+        ),
+
         html.Label("Hawaii Resident", htmlFor="hawaii-residency-filter", tabIndex=4, className="form-label"),
         dcc.Dropdown(
             id="hawaii-residency-filter", options=opts_list(hawaii_residency_opts), multi=True,
@@ -275,6 +284,12 @@ filters_card_dose = dbc.Card(
         dcc.Dropdown(
             id="city-filter-dose", options=opts_list(dose_city_opts), multi=True,
             placeholder="City", className="mb-2",
+            persistence=True, persistence_type="session"
+        ),
+        html.Label("Year", htmlFor="year-filter-dose", tabIndex=3, className="form-label"),
+        dcc.Dropdown(
+            id="year-filter-dose", options=opts_list(dose_year_opts), multi=True,
+            placeholder="Year", className="mb-2",
             persistence=True, persistence_type="session"
         ),
         html.Label("Hawaii Resident", htmlFor="hawaii-residency-filter-dose", tabIndex=4, className="form-label"),
@@ -471,13 +486,14 @@ layout = layout_for(is_mobile=False)
     Input("substance-filter", "value"),
     Input("county-filter", "value"),
     Input("city-filter", "value"),
+    Input("year-filter", "value"),
     Input("hawaii-residency-filter", "value"),
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
 
 
-def update_dashboard(substance, county, city, hawaii_residency, age, sex):
+def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     """
     This function runs every time the user changes a filter.
 
@@ -505,12 +521,13 @@ def update_dashboard(substance, county, city, hawaii_residency, age, sex):
     dff = df_raw.copy()
 
     # Only apply filters for columns that actually exist.
-    if "substance" in dff.columns:       dff = apply_filter(dff, "substance", substance)
-    if "county" in dff.columns:          dff = apply_filter(dff, "county", county)
-    if "city" in dff.columns:            dff = apply_filter(dff, "city", city)
-    if "hawaii_residency" in dff.columns: dff = apply_filter(dff, "hawaii_residency", hawaii_residency)
-    if "age_group" in dff.columns:       dff = apply_filter(dff, "age_group", age)
-    if "sex" in dff.columns:             dff = apply_filter(dff, "sex", sex)
+    if "substance" in dff.columns:          dff = apply_filter(dff, "substance", substance)
+    if "county" in dff.columns:             dff = apply_filter(dff, "county", county)
+    if "city" in dff.columns:               dff = apply_filter(dff, "city", city)
+    if "year" in dff.columns:               dff = apply_filter(dff, "year", year)
+    if "hawaii_residency" in dff.columns:   dff = apply_filter(dff, "hawaii_residency", hawaii_residency)
+    if "age_group" in dff.columns:          dff = apply_filter(dff, "age_group", age)
+    if "sex" in dff.columns:                dff = apply_filter(dff, "sex", sex)
 
     # Drop duplicate record_ids so each record is only counted once.
     dff_uniq = dff.drop_duplicates(subset="record_id")
@@ -714,13 +731,14 @@ def update_dashboard(substance, county, city, hawaii_residency, age, sex):
     Input("substance-filter-dose", "value"),
     Input("county-filter-dose", "value"),
     Input("city-filter-dose", "value"),
+    Input("year-filter-dose", "value"),
     Input("hawaii-residency-filter-dose", "value"),
     Input("age-filter-dose", "value"),
     Input("sex-filter-dose", "value"),
 
 )
 
-def update_dose_section(substance, county, city, hawaii_residency, age, sex):
+def update_dose_section(substance, county, city, year, hawaii_residency, age, sex):
 
     def apply_filter(frame, col, val):
         """
@@ -742,6 +760,7 @@ def update_dose_section(substance, county, city, hawaii_residency, age, sex):
     if "substance" in dose_df.columns:          dose_df = apply_filter(dose_df, "substance", substance)
     if "county" in dose_df.columns:             dose_df = apply_filter(dose_df, "county", county)
     if "city" in dose_df.columns:               dose_df = apply_filter(dose_df, "city", city)
+    if "year" in dose_df.columns:               dose_df = apply_filter(dose_df, "year", year)
     if "hawaii_residency" in dose_df.columns:   dose_df = apply_filter(dose_df, "hawaii_residency", hawaii_residency)
     if "age_group" in dose_df.columns:          dose_df = apply_filter(dose_df, "age_group", age)
     if "sex" in dose_df.columns:                dose_df = apply_filter(dose_df, "sex", sex)
