@@ -195,7 +195,7 @@ skip_link = html.A(
 kpi_card = dbc.Card(
     dbc.CardBody([
         html.H4("Total Discharges", className="card-title text-white"),
-        html.H2(f"{total_unique:,}", className="text-white"),
+        html.H2(id="kpi-total-discharges", className="text-white"),
     ]),
     className="bg-success text-center mb-4"
 )
@@ -408,7 +408,7 @@ def layout_for(is_mobile: bool = False):
                 dbc.Card(
                     # KPI card
                     dbc.CardBody([
-                        html.H2(f"{total_dose_unique:,}", className="text-white"),
+                        html.H2(id="kpi-total-dose-discharges", className="text-white"),
                         html.Small("Distinct discharges per Drug Overdose Surveillance and Epidemiology (DOSE) definitions", className="text-white-50")
                     ]),
                     className="bg-success text-center mb-4"
@@ -477,6 +477,7 @@ layout = layout_for(is_mobile=False)
 # ----------------------------
 
 @callback(
+    Output("kpi-total-discharges", "children"),
     Output("bar-substances", "figure"),
     Output("county-year-lines", "figure"),
     Output("sex-year-stacked", "figure"),
@@ -531,6 +532,8 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
 
     # Drop duplicate record_ids so each record is only counted once.
     dff_uniq = dff.drop_duplicates(subset="record_id")
+    # Used to update the total on the KPI card when user selects the filter
+    filter_total = dff_uniq["record_id"].nunique()
 
     # ---------- Bar chart: Discharges by Substance ----------
     if {"substance"}.issubset(dff_uniq.columns):
@@ -714,6 +717,7 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
 
     # Return all the updated visuals and tables to Dash
     return (
+        f"{filter_total:,}",
         sub_bar,
         line_fig,
         sex_bar,
@@ -723,6 +727,7 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     )
 
 @callback(
+    Output("kpi-total-dose-discharges", "children"),
     Output("bar-dose", "figure"),
     Output("year-diagnosis-lines-dose", "figure"),
     Output("table-county-dose", "children"),
@@ -767,7 +772,8 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
 
     # Drop duplicate record_ids so each record is only counted once.
     dose_df_uniq = dose_df.drop_duplicates(subset="record_id")
-
+    # Used to update the total on the KPI card when user selects the filter
+    filter_dose_total = dose_df_uniq["record_id"].nunique()
 
     # ---------- Bar chart: Nonfatal overdoses related to poisonings ----------
     if {"substance"}.issubset(dose_df.columns):
@@ -900,6 +906,7 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
 
     # Return all the updated visuals and tables to Dash
     return (
+        f"{filter_dose_total:,}",
         dose_bar,
         dose_line,
         tbl("county"),
