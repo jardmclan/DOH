@@ -332,25 +332,25 @@ def layout_for(is_mobile: bool = False):
         ),
     ], xs=12, md=6)
 
-    # RIGHT: treemap + two small summary tables
+    # RIGHT: county share chart + two small summary tables
     right = dbc.Col([
-        graph_block("treemap-county", "County Share (Unique Discharges)", h_tree),
+        graph_block("pie-county-share", "County Share (Unique Discharges)", h_tree),
         html.P(
-            "Treemap showing share of unique discharges by county.",
+            "Pie chart showing share of unique discharges by county.",
             className="sr-only"
         ),
 
-        # Two tables side-by-side (Age + Sex)
-        # On phones they still show 2-up (xs=6 each).
+        # Two summary tables (Age + Sex at Birth)
+        # Match Discharges tab behavior: 2-up on phones, stacked on md+.
         dbc.Row([
             dbc.Col([
                 html.H5("Age Group", className="mb-2"),
                 html.Div(id="tbl-age", className="sidebar-table"),
-            ], xs=6),
+            ], xs=12, md=12),
             dbc.Col([
                 html.H5("Sex", className="mb-2"),
                 html.Div(id="tbl-sex", className="sidebar-table"),
-            ], xs=6),
+            ], xs=12, md=12),
         ], className="g-3"),
     ], xs=12, md=3)
 
@@ -382,7 +382,7 @@ layout = layout_for(is_mobile=False)
 @callback(
     Output("bar-top-substances", "figure"),
     Output("stack-year-county", "figure"),
-    Output("treemap-county", "figure"),
+    Output("pie-county-share", "figure"),
     Output("tbl-age", "children"),
     Output("tbl-sex", "children"),
     Input("f-substance", "value"),
@@ -471,20 +471,25 @@ def update(substance, age, sex, county, year):
     else:
         fig_year_county = px.bar()
 
-    # ---------- Treemap: county share ----------
+    # ---------- Pie chart: county share ----------
     uniq = dff.drop_duplicates("record_id")
     if {"county", "record_id"}.issubset(uniq.columns) and not uniq.empty:
         county_counts = uniq.groupby("county")["record_id"].nunique().reset_index(name="discharges")
-        fig_tree = px.treemap(county_counts, path=["county"], values="discharges")
+        fig_tree = px.pie(
+            county_counts,
+            names="county",
+            values="discharges",
+            hole=0.35,
+        )
         fig_tree.update_traces(
-            texttemplate="%{label}<br>%{value:,}",
-            hovertemplate="%{label}: %{value:,} (%{percentRoot:.1%})<extra></extra>"
+            texttemplate="%{label}<br>%{percent:.1%} (%{value:,})",
+            hovertemplate="%{label}: %{value:,} (%{percent:.1%})<extra></extra>"
         )
         fig_tree.update_layout(
             margin=dict(l=0, r=0, t=50, b=0)   # <-- extra top space
         )
     else:
-        fig_tree = px.treemap()
+        fig_tree = px.pie()
 
     # ---------- Small tables ----------
     def simple_table(df, col, ordered=None):
@@ -498,6 +503,13 @@ def update(substance, age, sex, county, year):
             g = g.sort_values(col)
 
         g["discharges"] = g["discharges"].map(lambda x: f"{int(x):,}")
+
+        header_labels = {
+            "age_group": "Age Group",
+            "sex": "Sex at Birth",
+            "discharges": "Discharges",
+        }
+        g = g.rename(columns=header_labels)
 
         return dbc.Table.from_dataframe(
             g,
@@ -559,8 +571,8 @@ def _cfg_stack(show):
     return {"display": "none"} if show else {}
 
 @callback(
-    Output("treemap-county-title", "style"),
-    Input("treemap-county-store", "data"),
+    Output("pie-county-share-title", "style"),
+    Input("pie-county-share-store", "data"),
 )
 def _cfg_tree(show):
     """
@@ -596,9 +608,9 @@ def _btn_stack(n, cur):
     return not bool(cur)
 
 @callback(
-    Output("treemap-county-store", "data"),
-    Input("treemap-county-btn", "n_clicks"),
-    State("treemap-county-store", "data"),
+    Output("pie-county-share-store", "data"),
+    Input("pie-county-share-btn", "n_clicks"),
+    State("pie-county-share-store", "data"),
     prevent_initial_call=True
 )
 def _btn_tree(n, cur):

@@ -685,6 +685,14 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
         # Make the counts look nicer with commas
         g["count"] = g["count"].map(lambda x: f"{int(x):,}")
 
+        # Use friendly display labels for table headers
+        header_labels = {
+            "age_group": "Age Group",
+            "county": "County",
+        }
+        display_column = header_labels.get(column, column)
+        g = g.rename(columns={column: display_column, "count": "Discharges"})
+
         # Build a styled table for the dashboard
         return dbc.Table.from_dataframe(g, striped=True, bordered=True, hover=True)
 
@@ -871,6 +879,14 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
 
         # Make the counts look nicer with commas
         g["count"] = g["count"].map(lambda x: f"{int(x):,}")
+
+        # Use friendly display labels for table headers
+        header_labels = {
+            "age_group": "Age Group",
+            "county": "County"
+        }
+        display_column = header_labels.get(column, column)
+        g = g.rename(columns={column: display_column, "count": "Discharges"})
 
         # Build a styled table for the dashboard
         return dbc.Table.from_dataframe(g, striped=True, bordered=True, hover=True)
