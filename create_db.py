@@ -6,10 +6,10 @@ DB_NAME = "DOH_AMHD_NO_PII.db"
 
 # Load CSVs
 print("Loading CSV files...")
-df_diag_su = pd.read_csv("discharge_data_view_diag_su.csv")
-df_diag_mh = pd.read_csv("discharge_data_view_diag_mh.csv")
-df_demo = pd.read_csv("discharge_data_view_demographics.csv")
-df_dose = pd.read_csv("dose_data.csv")
+df_diag_su = pd.read_csv("data/discharge_data_view_diag_su.csv")
+df_diag_mh = pd.read_csv("data/discharge_data_view_diag_mh.csv")
+df_demo = pd.read_csv("data/discharge_data_view_demographics.csv")
+df_dose = pd.read_csv("data/dose_data.csv")
 
 # Clean column names (lowercase and strip whitespace)
 df_diag_su.columns = df_diag_su.columns.str.lower().str.strip()
