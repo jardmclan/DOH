@@ -8,8 +8,6 @@ jens_changes/
 .env
 DOH_AMHD_NO_PII.db
 PlotlyDemo.mp4
-discharge_data_view_diag_mh.csv
-dose_data.csv
 
 # OS stuff
 .DS_Store
@@ -20,3 +18,5 @@ node_modules/
 
 # jupyter lab extensions (from the warning)
 share/jupyter/
+
+data/
