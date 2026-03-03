@@ -7,7 +7,7 @@
 from db_utils import execute_query
 import pandas as pd
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, callback
 import plotly.express as px
 from theme import register_template
 # This applies our custom Plotly theme (colors, fonts, etc.)
@@ -134,7 +134,7 @@ dose_sex_opts       = sort_opts(df_dose_raw["sex"])                             
 # Reusable graph block (Tools toggle + title + graph)
 # ----------------------------
 
-def graph_block(base_id: str, title_text: str, height_px: str, tools_default=False):
+def graph_block(base_id: str, title_text: str, height_px: str):
     """
     Make a standard "card" that holds:
       - a hidden store that remembers if the tools are on/off
@@ -147,25 +147,8 @@ def graph_block(base_id: str, title_text: str, height_px: str, tools_default=Fal
     """
     return html.Div(
         [
-            # This keeps track of whether the tools bar should show for this plot.
-            dcc.Store(id=f"{base_id}-store", data=bool(tools_default)),
-
-            # Header row with the Tools button and the plot title side-by-side.
-            html.Div(
-                [
-                    dbc.Button(
-                        "Tools",
-                        id=f"{base_id}-btn",
-                        n_clicks=0,
-                        color="primary",
-                        size="sm",
-                        className="me-2"
-                    ),
-                    html.H5(title_text, id=f"{base_id}-title", className="m-0"),
-                ],
-                # This class keeps things laid out in one row and avoids overlap.
-                className="plot-card-header mb-2"
-            ),
+            # Header row with the plot title.
+            html.H5(title_text, id=f"{base_id}-title", className="plot-card-header mb-2"),
 
             # The actual graph. Modebar (tools) is always on now.
             dcc.Graph(
@@ -925,96 +908,3 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
         tbl("age_group", dose_age_groups),
         dose_sex_pie,
     )
-
-# ----------------------------
-# Tool toggles — now only hide/show the title
-# ----------------------------
-
-@callback(
-    Output("county-year-lines-title", "style"),
-    Input("county-year-lines-store", "data"),
-)
-def _toggle_lines_cfg(show):
-    """
-    When the Tools button is used for the line chart,
-    just hide or show the title text. The modebar is always on.
-    """
-    return {"display": "none"} if show else {}
-
-@callback(
-    Output("sex-year-stacked-title", "style"),
-    Input("sex-year-stacked-store", "data"),
-)
-def _toggle_bars_cfg(show):
-    """
-    Same idea for the stacked bar chart title.
-    """
-    return {"display": "none"} if show else {}
-
-@callback(
-    Output("sex-pie-title", "style"),
-    Input("sex-pie-store", "data"),
-)
-def _toggle_pie_cfg(show):
-    """
-    Same idea for the pie chart title.
-    """
-    return {"display": "none"} if show else {}
-
-# ----------------------------
-# Buttons flip their stores (toggle on/off)
-# ----------------------------
-
-@callback(
-    Output("county-year-lines-store", "data"),
-    Input("county-year-lines-btn", "n_clicks"),
-    State("county-year-lines-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_lines(n, cur):
-    """
-    When the user clicks the Tools button on the line chart,
-    flip the stored value (on -> off, off -> on).
-    """
-    return not bool(cur)
-
-@callback(
-    Output("sex-year-stacked-store", "data"),
-    Input("sex-year-stacked-btn", "n_clicks"),
-    State("sex-year-stacked-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_bars(n, cur):
-    """
-    Same toggle behavior for the stacked bar chart.
-    """
-    return not bool(cur)
-
-@callback(
-    Output("sex-pie-store", "data"),
-    Input("sex-pie-btn", "n_clicks"),
-    State("sex-pie-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_pie(n, cur):
-    """
-    Same toggle behavior for the pie chart.
-    """
-    return not bool(cur)
-
-# callbacks for bar_dose graph
-@callback(
-    Output("bar-dose-title", "style"),
-    Input("bar-dose-store", "data"),
-)
-def _toggle_dose_cfg(show):
-    return {"display": "none"} if show else {}
-
-@callback(
-    Output("bar-dose-store", "data"),
-    Input("bar-dose-btn", "n_clicks"),
-    State("bar-dose-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_dose(n, cur):
-    return not bool(cur)

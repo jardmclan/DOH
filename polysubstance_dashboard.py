@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, callback
 import plotly.express as px
 import plotly.io as pio
 
@@ -200,32 +200,14 @@ def _wrap_label(label: str, max_len: int = 22):
 
 def graph_block(base_id: str, title_text: str, height: str):
     """
-    Build a reusable chart "card" with:
-
-      Store:  f"{base_id}-store"  (remembers if title is hidden or not)
-      Button: f"{base_id}-btn"    (user clicks to toggle that store)
-      Title:  f"{base_id}-title"  (hidden when Tools is “on”)
-      Graph:  f"{base_id}"        (the actual plot, tools bar always visible)
+    Build a reusable chart "card" with a title and graph.
 
     Why: this keeps plot sections consistent across the page and helps
     avoid repeating the same layout code every time we add a graph.
     """
     return html.Div(
         [
-            # This hidden store holds a simple True/False flag.
-            dcc.Store(id=f"{base_id}-store", data=False),
-
-            # Header row: Tools button + title text
-            html.Div(
-                [
-                    dbc.Button(
-                        "Tools", id=f"{base_id}-btn", n_clicks=0,
-                        color="primary", size="sm", className="me-2"
-                    ),
-                    html.H5(title_text, id=f"{base_id}-title", className="m-0"),
-                ],
-                className="d-flex align-items-center mb-2"
-            ),
+            html.H5(title_text, id=f"{base_id}-title", className="mb-2"),
 
             # The graph itself; Plotly tools bar (modebar) is always ON.
             dcc.Graph(
@@ -546,75 +528,3 @@ def _reset_filters(n):
     We return empty lists so Dash treats them as "no selection".
     """
     return [], [], [], [], []
-
-
-# ---------- Tool toggles (now only hide/show the title) ----------
-@callback(
-    Output("bar-top-substances-title", "style"),
-    Input("bar-top-substances-store", "data"),
-)
-def _cfg_sub(show):
-    """
-    When the Tools button is used for the Top Substances chart,
-    just hide or show the title text. The tools bar stays on.
-    """
-    return {"display": "none"} if show else {}
-
-@callback(
-    Output("stack-year-county-title", "style"),
-    Input("stack-year-county-store", "data"),
-)
-def _cfg_stack(show):
-    """
-    Same idea for the Year × County stacked bar chart title.
-    """
-    return {"display": "none"} if show else {}
-
-@callback(
-    Output("pie-county-share-title", "style"),
-    Input("pie-county-share-store", "data"),
-)
-def _cfg_tree(show):
-    """
-    Same idea for the county treemap title.
-    """
-    return {"display": "none"} if show else {}
-
-
-# Buttons toggle their stores (so you can click tools on/off repeatedly)
-@callback(
-    Output("bar-top-substances-store", "data"),
-    Input("bar-top-substances-btn", "n_clicks"),
-    State("bar-top-substances-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_sub(n, cur):
-    """
-    Flip the tools flag for the Top Substances chart each time the
-    Tools button is clicked.
-    """
-    return not bool(cur)
-
-@callback(
-    Output("stack-year-county-store", "data"),
-    Input("stack-year-county-btn", "n_clicks"),
-    State("stack-year-county-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_stack(n, cur):
-    """
-    Flip the tools flag for the Year × County chart.
-    """
-    return not bool(cur)
-
-@callback(
-    Output("pie-county-share-store", "data"),
-    Input("pie-county-share-btn", "n_clicks"),
-    State("pie-county-share-store", "data"),
-    prevent_initial_call=True
-)
-def _btn_tree(n, cur):
-    """
-    Flip the tools flag for the county treemap.
-    """
-    return not bool(cur)
