@@ -1,4 +1,4 @@
--- name: load_main_data
+-- name: load_discharge_data_view_diag_su
 WITH dx AS (
   SELECT DISTINCT record_id, TRIM(diagnosis) AS substance
   FROM discharge_data_view_diag_su
@@ -7,8 +7,13 @@ WITH dx AS (
 SELECT
   dx.record_id,
   dx.substance,
-  m.county, m.city, m.zip, m.hawaii_residency,
-  m.age_group, m.sex, m.year
+  m.county, 
+  m.city, 
+  m.zip, 
+  m.hawaii_residency,
+  m.age_group, 
+  m.sex, 
+  m.year
 FROM dx
 JOIN discharge_data_view_demographics m ON m.record_id = dx.record_id;
 
@@ -41,8 +46,7 @@ JOIN poly_ids AS p
 JOIN discharge_data_view_demographics AS m
   ON m.record_id = u.record_id
 WHERE
-  CAST(m.year AS INTEGER) BETWEEN 2018 AND 2024
-  AND LOWER(COALESCE(NULLIF(TRIM(m.age_group), ''), 'unknown')) <> 'unknown';  -- drop Unknown/blank ages
+  LOWER(COALESCE(NULLIF(TRIM(m.age_group), ''), 'unknown')) <> 'unknown';  -- drop Unknown/blank ages
 
 
 -- name: load_sud_primary_mh_secondary_v2
@@ -71,8 +75,7 @@ SELECT
   CAST(d.year AS INTEGER)    AS year
 FROM co
 JOIN discharge_data_view_demographics d ON d.record_id = co.record_id
-WHERE CAST(d.year AS INTEGER) BETWEEN 2018 AND 2024
-  AND LOWER(COALESCE(NULLIF(TRIM(d.age_group), ''), 'unknown')) <> 'unknown';
+WHERE LOWER(COALESCE(NULLIF(TRIM(d.age_group), ''), 'unknown')) <> 'unknown'; -- removed hardcoded year filter
 
 
 -- name: load_dose_data

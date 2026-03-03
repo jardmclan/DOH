@@ -43,7 +43,7 @@ def load_sql_query(name, path="queries.sql"):
         raise KeyError(f"Named query '{name}' not found in {path}.")
     return m[name]
 
-def load_main_dataframe_from_db():
+def load_discharge_dataframe_from_db():
     """
     This helper:
       1. Loads the main SQL query by name.
@@ -56,10 +56,11 @@ def load_main_dataframe_from_db():
     Note: Uses either SQLite or MSSQL automatically based on config.
     """
     # Grab the SQL for our main data
-    sql = load_sql_query("load_main_data")
+    sql = load_sql_query("load_discharge_data_view_diag_su")
     
     # Execute query using db_utils (automatically uses correct database)
     df = execute_query(sql)
+    print(f"load_discharge_data_view_diag_su returned {len(df):,} rows")
 
     # If there is no data, we stop early instead of showing a broken page
     if df.empty:
@@ -78,7 +79,7 @@ def load_main_dataframe_from_db():
 
 # Load the full dataset once at startup.
 # The callbacks will reuse this instead of hitting the database every time.
-df_raw = load_main_dataframe_from_db()
+df_raw = load_discharge_dataframe_from_db()
 
 # Count how many unique records we have to show on the KPI card.
 total_unique = df_raw["record_id"].nunique()
@@ -530,16 +531,14 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     if "age_group" in dff.columns:          dff = apply_filter(dff, "age_group", age)
     if "sex" in dff.columns:                dff = apply_filter(dff, "sex", sex)
 
-    # Drop duplicate record_ids so each record is only counted once.
-    dff_uniq = dff.drop_duplicates(subset="record_id")
+    # Count unique discharges (each record_id represents one discharge).
     # Used to update the total on the KPI card when user selects the filter
-    filter_total = dff_uniq["record_id"].nunique()
+    filter_total = dff["record_id"].nunique()
 
     # ---------- Bar chart: Discharges by Substance ----------
-    if {"substance"}.issubset(dff_uniq.columns):
+    if {"substance"}.issubset(dff.columns):
         by_sub = (
-            dff_uniq.groupby("substance")["record_id"]
-            .nunique()
+            dff.groupby("substance")["record_id"].nunique()
             .reset_index(name="count")
             .sort_values("count", ascending=True)
         )
@@ -582,15 +581,14 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
         sub_bar = px.bar()
 
     # ---------- Line chart: Discharges by County and Year ----------
-    if {"county", "year"}.issubset(dff_uniq.columns):
-        # Count how many unique records per year + county
+    if {"county", "year"}.issubset(dff.columns):
+        # Count unique discharges per year + county
         by_cy = (
-            dff_uniq.groupby(["year", "county"])["record_id"]
-            .nunique()
+            dff.groupby(["year", "county"])["record_id"].nunique()
             .reset_index(name="count")
         )
         # Order counties in a consistent way for the legend
-        counties = sort_opts(dff_uniq["county"]) if "county" in dff_uniq.columns else []
+        counties = sort_opts(dff["county"]) if "county" in dff.columns else []
         if counties:
             by_cy["county"] = pd.Categorical(by_cy["county"], categories=counties, ordered=True)
 
@@ -616,11 +614,10 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
         line_fig = px.line()
 
     # ---------- Stacked bar chart: Yearly Discharges by Gender ----------
-    if {"year", "sex"}.issubset(dff_uniq.columns):
-        # Count how many unique records per year + gender
+    if {"year", "sex"}.issubset(dff.columns):
+        # Count unique discharges per year + gender
         by_ys = (
-            dff_uniq.groupby(["year", "sex"])["record_id"]
-            .nunique()
+            dff.groupby(["year", "sex"])["record_id"].nunique()
             .reset_index(name="count")
             .sort_values(["year", "sex"])
         )
@@ -665,21 +662,20 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     # ---------- Helper for the summary tables ----------
     def tbl(column, categories=None):
         """
-        Build a small table that shows the count of unique records
+        Build a small table that shows the count of unique discharges
         for each value in the chosen column.
 
         If we pass in a list of categories, we use that order in the table.
         """
-        if column not in dff_uniq.columns:
+        if column not in dff.columns:
             return dbc.Alert(
                 f"Column '{column}' not found.",
                 color="warning",
                 className="mb-0"
             )
 
-        # Count records per category
-        g = dff_uniq.groupby(column)["record_id"].nunique().reset_index()
-        g.columns = [column, "count"]
+        # Count unique discharges per category
+        g = dff.groupby(column)["record_id"].nunique().reset_index(name="count")
 
         # Use the given category order if provided
         if categories:
@@ -693,10 +689,9 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
         return dbc.Table.from_dataframe(g, striped=True, bordered=True, hover=True)
 
     # ---------- Pie chart: Discharges by Gender ----------
-    if "sex" in dff_uniq.columns:
+    if "sex" in dff.columns:
         pie_df = (
-            dff_uniq.groupby("sex")["record_id"]
-            .nunique()
+            dff.groupby("sex")["record_id"].nunique()
             .reset_index(name="count")
             .sort_values("count", ascending=False)
         )
@@ -715,6 +710,9 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     else:
         sex_pie = px.pie()
 
+    # Extract age groups dynamically from the filtered data
+    age_groups = sorted([v for v in dff["age_group"].unique() if v != "Unknown"]) + (["Unknown"] if "Unknown" in dff["age_group"].values else []) if "age_group" in dff.columns and not dff.empty else None
+
     # Return all the updated visuals and tables to Dash
     return (
         f"{filter_total:,}",
@@ -722,7 +720,7 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
         line_fig,
         sex_bar,
         tbl("county"),
-        tbl("age_group", ["<18", "18-44", "45-64", "65-74", "75+", "Unknown"]),
+        tbl("age_group", age_groups),
         sex_pie,
     )
 
@@ -770,16 +768,14 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
     if "age_group" in dose_df.columns:          dose_df = apply_filter(dose_df, "age_group", age)
     if "sex" in dose_df.columns:                dose_df = apply_filter(dose_df, "sex", sex)
 
-    # Drop duplicate record_ids so each record is only counted once.
-    dose_df_uniq = dose_df.drop_duplicates(subset="record_id")
+    # Count unique discharges (each record_id represents one discharge).
     # Used to update the total on the KPI card when user selects the filter
-    filter_dose_total = dose_df_uniq["record_id"].nunique()
+    filter_dose_total = dose_df["record_id"].nunique()
 
     # ---------- Bar chart: Nonfatal overdoses related to poisonings ----------
     if {"substance"}.issubset(dose_df.columns):
         by_dose = (
-            dose_df.groupby("substance")["record_id"]
-            .nunique()
+            dose_df.groupby("substance")["record_id"].nunique()
             .reset_index(name="count")
             .sort_values("count", ascending=True)
         )
@@ -819,10 +815,9 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
 
     # ---------- Line chart: Discharges by Year and Substance ----------
     if {"year", "substance"}.issubset(dose_df.columns):
-        # Count how many unique records per year + county
+        # Count unique discharges per year + substance
         by_year_substance = (
-            dose_df.groupby(["year", "substance"])["record_id"]
-            .nunique()
+            dose_df.groupby(["year", "substance"])["record_id"].nunique()
             .reset_index(name="count")
         )
         # Order substances in a consistent way for the legend
@@ -854,21 +849,20 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
     # ---------- Helper for the summary tables ----------
     def tbl(column, categories=None):
         """
-        Build a small table that shows the count of unique records
+        Build a small table that shows the count of unique discharges
         for each value in the chosen column.
 
         If we pass in a list of categories, we use that order in the table.
         """
-        if column not in dose_df_uniq.columns:
+        if column not in dose_df.columns:
             return dbc.Alert(
                 f"Column '{column}' not found.",
                 color="warning",
                 className="mb-0"
             )
 
-        # Count records per category
-        g = dose_df_uniq.groupby(column)["record_id"].nunique().reset_index()
-        g.columns = [column, "count"]
+        # Count unique discharges per category
+        g = dose_df.groupby(column)["record_id"].nunique().reset_index(name="count")
 
         # Use the given category order if provided
         if categories:
@@ -884,8 +878,7 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
     # ---------- Pie chart: Discharges by Gender ----------
     if "sex" in dose_df.columns:
         pie_df = (
-            dose_df.groupby("sex")["record_id"]
-            .nunique()
+            dose_df.groupby("sex")["record_id"].nunique()
             .reset_index(name="count")
             .sort_values("count", ascending=False)
         )
@@ -904,13 +897,16 @@ def update_dose_section(substance, county, city, year, hawaii_residency, age, se
     else:
         dose_sex_pie = px.pie()
 
+    # Extract age groups dynamically from the filtered DOSE data
+    dose_age_groups = sorted([v for v in dose_df["age_group"].unique() if v != "Unknown"]) + (["Unknown"] if "Unknown" in dose_df["age_group"].values else []) if "age_group" in dose_df.columns and not dose_df.empty else None
+
     # Return all the updated visuals and tables to Dash
     return (
         f"{filter_dose_total:,}",
         dose_bar,
         dose_line,
         tbl("county"),
-        tbl("age_group", ["<18", "18-44", "45-64", "65-74", "75+", "Unknown"]),
+        tbl("age_group", dose_age_groups),
         dose_sex_pie,
     )
 

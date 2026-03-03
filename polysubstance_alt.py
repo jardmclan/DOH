@@ -17,7 +17,7 @@ register_template()
 # Configuration
 QUERIES_PATH = "queries.sql"
 PREFERRED_QUERY = "load_polysubstance_data"
-FALLBACK_QUERY = "load_main_data"
+FALLBACK_QUERY = "load_discharge_data_view_diag_su"
 
 
 # ---------- SQL loader ----------
@@ -73,10 +73,15 @@ def load_df():
 
 df_raw = load_df()
 
-# Filter data: 2018-2024, exclude unknown ages
+# Filter data: keep all years present in data, exclude unknown ages
 if "year" in df_raw.columns:
     df_raw["year"] = pd.to_numeric(df_raw["year"], errors="coerce").astype("Int64")
-    mask_year = df_raw["year"].between(2018, 2024, inclusive="both")
+    valid_years = df_raw["year"].dropna()
+    if not valid_years.empty:
+        min_year = int(valid_years.min())
+        max_year = int(valid_years.max())
+        print(f"[polysubstance_alt] year range in data: {min_year}-{max_year}")
+    mask_year = df_raw["year"].notna()
 else:
     mask_year = True
 

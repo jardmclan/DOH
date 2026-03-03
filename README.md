@@ -30,6 +30,11 @@ Ensure you have Python installed on your system.
     python -m venv venv
     source venv/bin/activate  # On Windows use `venv\Scripts\activate`
     ```
+    If on Jetstream2
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
 
 3.  **Install Dependencies**
 
@@ -71,6 +76,11 @@ Ensure you have Python installed on your system.
 **For SQLite (Local):**
 
 If the `DOH_AMHD_NO_PII.db` file is missing or needs to be refreshed with the latest CSV data:
+
+If on Jetstream2, get the data files:
+```
+scp /Users/jgeis/Work/DOH/plotly/discharge_data_view_diag_mh.csv insert-username-here@insert-ip-address-here:/home/exouser/doh_plotly
+```
 
 ```bash
 source venv/bin/activate
@@ -144,10 +154,67 @@ Open your web browser and navigate to `http://127.0.0.1:8050/` to view the dashb
 
 ### Production Server
 
-Use gunicorn for production deployment:
+
+**currently hosted at:**
+https://jetstream2.exosphere.app/exosphere/projects/e547d834b2fe4beda5061b60dfc9df1b/regions/IU/servers/80d60dfa-f665-448e-aa91-2599dabe67ae
+
+
+### Follow previous instructions to get plotly running.
+
+Copy files over from local to remote, do following on local machine:   
 ```bash
-gunicorn multi_dashboard:server
+cd /Users/jgeis/Work/DOH/plotly
+
+scp discharge_data_view_diag_mh.csv insert-username-here@insert-ip-address-here:/home/exouser/doh_plotly/
+
+scp dash_app insert-username-here@insert-ip-address-here:/home/exouser/doh_plotly/
 ```
+
+
+**back on remote machine**  
+```bash
+sudo apt update  
+sudo apt install nginx  
+sudo apt install python3-gunicorn
+sudo mv /home/exouser/doh_plotly/dash_app /etc/nginx/sites-available/
+sudo vi /etc/nginx/sites-available/dash_app
+```
+verify dash-app file looks like this and has the correct server address (or ip address if not doing ssl certificate):
+```bash
+server {
+    listen 80;
+    server_name doh-plotly.asc190026.projects.jetstream-cloud.org;
+
+    location / {
+        proxy_pass http://127.0.0.1:8050;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+**set up certificate**  
+```bash
+sudo snap install --classic certbot
+sudo certbot --nginx -d doh-plotly.asc190026.projects.jetstream-cloud.org
+```
+
+**start nginx**  
+```bash
+sudo ln -s /etc/nginx/sites-available/dash_app /etc/nginx/sites-enabled
+sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+**If I do need gunicorn, use this:**  
+-- I didn't even start gunicorn and it seems to work.  Good enough for the proof of concept I'm going for right now.  
+```bash
+gunicorn multi_dashboard:server --bind 127.0.0.1:8050
+gunicorn --certfile=/etc/letsencrypt/live/doh-plotly.asc190026.projects.jetstream-cloud.org/fullchain.pem --keyfile=/etc/letsencrypt/live/doh-plotly.asc190026.projects.jetstream-cloud.org/privkey.pem --error-logfile=gunicorn_errors.log multi_dashboard:server --bind 127.0.0.1:8050
+```
+
 
 ## 📊 Data Sources
 
@@ -307,7 +374,7 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 
 **`db_utils.py`** - Database utility functions. Provides unified interface for database operations that works with both SQLite and MSSQL. Contains `execute_query()`, `get_connection()`, and `test_connection()` functions.
 
-**`queries.sql`** - Centralized SQL query repository. Contains named SQL queries used throughout the application (e.g., `load_main_data`, `load_polysubstance_data`, `count_by_sex_distinct`). Keeps SQL separate from Python code for easier maintenance.
+**`queries.sql`** - Centralized SQL query repository. Contains named SQL queries used throughout the application (e.g., `load_discharge_data_view_diag_su`, `load_polysubstance_data`, `count_by_sex_distinct`). Keeps SQL separate from Python code for easier maintenance.
 
 **`DOH_AMHD_NO_PII.db`** - SQLite database (created by `create_db.py` when using local mode) containing the discharge data tables.
 
@@ -348,3 +415,10 @@ The standard dashboard is desktop-focused. Use `mobile_app.py` for full mobile o
 **`assets/mobile.css`** - Mobile-specific CSS rules that adjust grid layout and component sizing for screens under 768px wide.
 
 Here is a documentation draft for your `README.md` file. It is based on the file structure (e.g., the `assets` folder and `Procfile` strongly suggest a Plotly Dash application) and the data filenames found in your repository.
+
+
+
+### TODO
+* Fix dash-app
+* add in any other files I need to create/move
+* do I need gunicorn?

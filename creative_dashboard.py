@@ -47,8 +47,8 @@ def load_sql_query(name, path="queries.sql"):
 # ----------------------------
 # Load data from database via your named query
 # ----------------------------
-def load_main_dataframe_from_db():
-    sql = load_sql_query("load_main_data")
+def load_discharge_dataframe_from_db():
+    sql = load_sql_query("load_discharge_data_view_diag_su")
     
     # Execute query using db_utils (automatically uses correct database)
     df = execute_query(sql)
@@ -56,7 +56,7 @@ def load_main_dataframe_from_db():
     if df.empty:
         raise RuntimeError(
             "Query returned 0 rows.\n"
-            "Check that queries.sql has the updated -- name: load_main_data block\n"
+            "Check that queries.sql has the updated -- name: load_discharge_data_view_diag_su block\n"
             "and that your 'diagnoses'/'demographics' table column names match."
         )
 
@@ -73,7 +73,7 @@ def load_main_dataframe_from_db():
 # ----------------------------
 # Load data
 # ----------------------------
-df_raw = load_main_dataframe_from_db()
+df_raw = load_discharge_dataframe_from_db()
 
 # KPI: exact total (no rounding)
 total_unique = df_raw["record_id"].nunique()
@@ -108,7 +108,7 @@ app.layout = dbc.Container([
                 dbc.CardBody([
                     html.H4("Total Discharges", className="card-title text-white"),
                     html.H2(f"{total_unique:,}", className="text-white"),
-                    html.Small("Count of unique records from 2018 to 2024", className="text-white-50")
+                    html.Small("Number of Emergency Discharges Related to Substance Use", className="text-white-50")
                 ])
             ], className="bg-success text-center mb-4"),
 
@@ -225,11 +225,14 @@ def update_dashboard(county, city, hawaii_residency, age, sex):
         grouped["count"] = grouped["count"].map(lambda x: f"{int(x):,}")
         return dbc.Table.from_dataframe(grouped, striped=True, bordered=True, hover=True)
 
+    # Extract age groups dynamically from the filtered data
+    age_groups = sorted([v for v in dff_uniq["age_group"].unique() if v != "Unknown"]) + (["Unknown"] if "Unknown" in dff_uniq["age_group"].values else []) if "age_group" in dff_uniq.columns and not dff_uniq.empty else None
+
     return (
         substance_fig,
         year_fig,
         generate_table("county"),
-        generate_table("age_group", ["<18", "18-44", "45-64", "65-74", "75+", "Unknown"]),
+        generate_table("age_group", age_groups),
         generate_table("sex"),
     )
 

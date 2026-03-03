@@ -24,7 +24,7 @@ def load_sql_query(name, path="queries.sql"):
 # Load data
 conn = sqlite3.connect("DOH_AMHD_NO_PII.db")
 
-df_raw = pd.read_sql_query(load_sql_query("load_main_data"), conn)
+df_raw = pd.read_sql_query(load_sql_query("load_discharge_data_view_diag_su"), conn)
 conn.close()
 
 # Compute total
@@ -44,7 +44,7 @@ app.layout = dbc.Container([
             dbc.Card([
                 dbc.CardBody([
                     html.H2(f"{rounded_total:,}", className="card-title text-white"),
-                    html.H6("2018–2024: Number of Emergency Discharges Related to Substance Use", className="card-subtitle text-white"),
+                    html.H6("Number of Emergency Discharges Related to Substance Use", className="card-subtitle text-white"),
                     html.Small("", className="text-white-50")
                 ])
             ], className="bg-success text-center")
@@ -134,11 +134,14 @@ def update_dashboard(county, city, hawaii_residency, age, sex):
             grouped = grouped.sort_values(column)
         return dbc.Table.from_dataframe(grouped, striped=True, bordered=True, hover=True)
 
+    # Extract age groups dynamically from the filtered data
+    age_groups = sorted([v for v in dff["age_group"].unique() if v != "Unknown"]) + (["Unknown"] if "Unknown" in dff["age_group"].values else []) if "age_group" in dff.columns and not dff.empty else None
+
     return (
         substance_fig,
         year_fig,
         generate_table('county'),
-        generate_table('age_group', ["<18", "18-44", "45-64", "65-74", "75+", "Unknown"]),
+        generate_table('age_group', age_groups),
         generate_table('sex')
     )
 

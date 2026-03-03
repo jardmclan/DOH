@@ -22,7 +22,7 @@ register_template()  # set your Plotly template globally
 # Simple shortcuts so we can change these in one place if paths ever move
 QUERIES_PATH = "queries.sql"
 PREFERRED_QUERY = "load_polysubstance_data"
-FALLBACK_QUERY  = "load_main_data"
+FALLBACK_QUERY  = "load_discharge_data_view_diag_su"
 
 
 # ---------- SQL loader ----------
@@ -108,9 +108,14 @@ print("[debug] queries.sql path:", Path(QUERIES_PATH).resolve())
 
 # Guard rails: limit years to our window and drop "unknown" ages
 if "year" in df_raw.columns:
-    # Make sure year is numeric and in our chosen range (2018–2024)
+    # Make sure year is numeric
     df_raw["year"] = pd.to_numeric(df_raw["year"], errors="coerce").astype("Int64")
-    mask_year = df_raw["year"].between(2018, 2024, inclusive="both")
+    valid_years = df_raw["year"].dropna()
+    if not valid_years.empty:
+        min_year = int(valid_years.min())
+        max_year = int(valid_years.max())
+        print(f"[polysubstance_dashboard] year range in data: {min_year}-{max_year}")
+    mask_year = df_raw["year"].notna()
 else:
     mask_year = True  # If we don't have a year, don't filter by year
 
@@ -259,7 +264,7 @@ def layout_for(is_mobile: bool = False):
         dbc.Card(dbc.CardBody([
             html.H1(f"{kpi_total:,}", className="m-0"),
             html.Div(
-                "2018–2024: Number of Discharges Related to Polysubstance Use",
+                "Number of Discharges Related to Polysubstance Use",
                 className="text-white-50"
             ),
         ]), className="bg-success text-center mb-3"),
@@ -358,7 +363,7 @@ def layout_for(is_mobile: bool = False):
         ),
 
         html.H2(
-            "Polysubstance Discharges — Exploratory View (2018–2024)",
+            "Polysubstance Discharges — Exploratory View",
             className="text-white bg-dark p-3 text-center mb-4",
             tabIndex=0
         ),
@@ -502,7 +507,10 @@ def update(substance, age, sex, county, year):
             size="sm"
         )
 
-    tbl_age = simple_table(uniq, "age_group", ["<18", "18-44", "45-64", "65-74", "75+"])
+    # Extract age groups dynamically from the filtered data (excluding Unknown for polysubstance analysis)
+    age_groups = sorted(uniq["age_group"].unique()) if "age_group" in uniq.columns and not uniq.empty else None
+
+    tbl_age = simple_table(uniq, "age_group", age_groups)
     tbl_sex = simple_table(uniq, "sex")
 
     return fig_sub, fig_year_county, fig_tree, tbl_age, tbl_sex
