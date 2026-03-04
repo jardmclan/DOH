@@ -12,6 +12,30 @@ TAB_PATHS = {
 
 DEFAULT_PATH = "/discharges"
 
+NAV_GROUPS = {
+    "substance": [
+        ("/discharges", "Discharges related to substance use"),
+        ("/polysubstance", "Related to polysubstance use"),
+        ("/polysubstance-alt", "Polysubstance Alternates"),
+    ],
+    # Example future group:
+    # "new-visuals": [
+    #     ("/new-overview", "New Visuals Overview"),
+    #     ("/new-trends", "New Visuals Trends"),
+    #     ("/new-details", "New Visuals Details"),
+    # ],
+}
+
+ROUTE_TO_GROUP = {
+    "/discharges": "substance",
+    "/polysubstance": "substance",
+    "/polysubstance-alt": "substance",
+    # Example future route mapping:
+    # "/new-overview": "new-visuals",
+    # "/new-trends": "new-visuals",
+    # "/new-details": "new-visuals",
+}
+
 app = Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
@@ -34,30 +58,7 @@ app.layout = dbc.Container(
         dcc.Location(id="url", refresh=False),
 
         html.Div(
-            html.Div(
-                [
-                    html.A(
-                        TAB_PATHS["/discharges"],
-                        href="/discharges",
-                        className="tab",
-                        id="tab-discharges"
-                    ),
-                    html.A(
-                        TAB_PATHS["/polysubstance"],
-                        href="/polysubstance",
-                        className="tab",
-                        id="tab-polysubstance"
-                    ),
-                    html.A(
-                        TAB_PATHS["/polysubstance-alt"],
-                        href="/polysubstance-alt",
-                        className="tab",
-                        id="tab-polysubstance-alt"
-                    ),
-                ],
-                className="tabs",
-                id="top-nav"
-            ),
+            html.Div(id="top-nav", className="tabs"),
             id="top-nav-wrapper",
             className="mb-2",
         ),
@@ -71,30 +72,35 @@ app.layout = dbc.Container(
 
 
 @callback(
-    Output("tab-discharges", "className"),
-    Output("tab-polysubstance", "className"),
-    Output("tab-polysubstance-alt", "className"),
+    Output("top-nav", "children"),
     Output("top-nav-wrapper", "style"),
     Output("page-title", "children"),
     Input("url", "pathname"),
 )
 def update_active_tab(pathname):
-    """Update which tab appears active and set the page title."""
+    """Render the active tab group for the current route and set title."""
     if not pathname:
         pathname = "/"
-    
-    # Determine which tab should be active
-    discharges_class = "tab tab--selected" if pathname == "/discharges" else "tab"
-    polysubstance_class = "tab tab--selected" if pathname == "/polysubstance" else "tab"
-    polysubstance_alt_class = "tab tab--selected" if pathname == "/polysubstance-alt" else "tab"
 
-    tab_visible_paths = {"/discharges", "/polysubstance", "/polysubstance-alt"}
-    nav_style = {} if pathname in tab_visible_paths else {"display": "none"}
-    
-    # Get the page title
+    group_name = ROUTE_TO_GROUP.get(pathname)
+    tabs = []
+
+    if group_name in NAV_GROUPS:
+        tabs = [
+            html.A(
+                label,
+                href=path,
+                className=("tab tab--selected" if pathname == path else "tab"),
+            )
+            for path, label in NAV_GROUPS[group_name]
+        ]
+        nav_style = {}
+    else:
+        nav_style = {"display": "none"}
+
     title = TAB_PATHS.get(pathname, "Substance Use Dashboards")
 
-    return discharges_class, polysubstance_class, polysubstance_alt_class, nav_style, title
+    return tabs, nav_style, title
 
 
 if __name__ == "__main__":
