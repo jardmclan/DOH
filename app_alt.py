@@ -301,7 +301,11 @@ filters_card_dose = dbc.Card(
     className="mb-4"
 )
 
-def layout_for(is_mobile: bool = False):
+def layout_for(
+    is_mobile: bool = False,
+    show_discharges: bool = True,
+    show_dose: bool = True,
+):
     """
     Build the full page layout, with slightly different heights if we
     are on a phone vs a larger screen.
@@ -383,71 +387,82 @@ def layout_for(is_mobile: bool = False):
     # Wrap everything in a fluid container so it stretches with the screen.
     return dbc.Container([
         skip_link,
-        dbc.Row([left_col, center_col, right_col], className="g-3"),
+        html.Div(
+            dbc.Row([left_col, center_col, right_col], className="g-3"),
+            id="discharges-section",
+            style={} if show_discharges else {"display": "none"}
+        ),
 
-        html.Hr(className="my-5"),
+        html.Hr(
+            className="my-5",
+            style={} if (show_discharges and show_dose) else {"display": "none"}
+        ),
 
-        dbc.Row([
-            dbc.Col([
-                dbc.Card(
-                    # KPI card
-                    dbc.CardBody([
-                        html.H2(id="kpi-total-dose-discharges", className="text-white"),
-                        html.Small("Distinct discharges per Drug Overdose Surveillance and Epidemiology (DOSE) definitions", className="text-white-50")
-                    ]),
-                    className="bg-success text-center mb-4"
-                ),
-                # Filters
-                filters_card_dose,
-            ], xs=12, md=3),
-
-            dbc.Col([
-                # Graph of overdoses relating to drug poisonings
-                graph_block("bar-dose", "Nonfatal Overdoses Related to Drug Poisonings", bar_h),
-                html.P("Bar chart of discharges of nonfatal overdoses relating to drug poisonings.", className="sr-only"),
-
-                # Line graph of year and substances
-                graph_block("year-diagnosis-lines-dose", "DOSE Discharges by Year and Substance", line_h),
-                # Screen-reader description only; not visible on screen.
-                html.P("Line chart of discharges by substance over time. Use the legend to toggle substances.", className="sr-only"),
-            ], xs=12, md=6),
-
-
-            dbc.Col(
-                [
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                [
-                                    html.H6("By County", className="mb-2"),
-                                    html.Div(
-                                        id="table-county-dose",
-                                        className="mobile-side-table",
-                                        style={"overflowX": "auto"}
-                                    ),
-                                ],
-                                xs=6, md=12, className="pe-1 mb-3",
-                            ),
-                            dbc.Col(
-                                [
-                                    html.H6("By Age Group", className="mb-2"),
-                                    html.Div(
-                                        id="table-age-dose",
-                                        className="mobile-side-table",
-                                        style={"overflowX": "auto"}
-                                    ),
-                                ],
-                                xs=6, md=12, className="ps-1 mb-3",
-                            ),
-                        ],
-                        className="g-2"
+        html.Div(
+            dbc.Row([
+                dbc.Col([
+                    dbc.Card(
+                        # KPI card
+                        dbc.CardBody([
+                            html.H2(id="kpi-total-dose-discharges", className="text-white"),
+                            html.Small("Distinct discharges per Drug Overdose Surveillance and Epidemiology (DOSE) definitions", className="text-white-50")
+                        ]),
+                        className="bg-success text-center mb-4"
                     ),
-                    graph_block("sex-pie-dose", "Discharges by Gender", pie_h),
-                    html.P("Pie chart of DOSE discharges by gender.", className="sr-only"),
-                ],
-                xs=12, md=3
-            )
-        ], className="g-3")
+                    # Filters
+                    filters_card_dose,
+                ], xs=12, md=3),
+
+                dbc.Col([
+                    # Graph of overdoses relating to drug poisonings
+                    graph_block("bar-dose", "Nonfatal Overdoses Related to Drug Poisonings", bar_h),
+                    html.P("Bar chart of discharges of nonfatal overdoses relating to drug poisonings.", className="sr-only"),
+
+                    # Line graph of year and substances
+                    graph_block("year-diagnosis-lines-dose", "DOSE Discharges by Year and Substance", line_h),
+                    # Screen-reader description only; not visible on screen.
+                    html.P("Line chart of discharges by substance over time. Use the legend to toggle substances.", className="sr-only"),
+                ], xs=12, md=6),
+
+
+                dbc.Col(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.H6("By County", className="mb-2"),
+                                        html.Div(
+                                            id="table-county-dose",
+                                            className="mobile-side-table",
+                                            style={"overflowX": "auto"}
+                                        ),
+                                    ],
+                                    xs=6, md=12, className="pe-1 mb-3",
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.H6("By Age Group", className="mb-2"),
+                                        html.Div(
+                                            id="table-age-dose",
+                                            className="mobile-side-table",
+                                            style={"overflowX": "auto"}
+                                        ),
+                                    ],
+                                    xs=6, md=12, className="ps-1 mb-3",
+                                ),
+                            ],
+                            className="g-2"
+                        ),
+                        graph_block("sex-pie-dose", "Discharges by Gender", pie_h),
+                        html.P("Pie chart of DOSE discharges by gender.", className="sr-only"),
+                    ],
+                    xs=12, md=3
+                )
+            ], className="g-3"),
+            id="dose-section",
+            style={} if show_dose else {"display": "none"}
+        )
 
     ], fluid=True, className="p-2")
 
