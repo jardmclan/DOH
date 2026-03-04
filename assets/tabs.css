@@ -20,8 +20,8 @@
   flex-direction: row;         /* horizontal */
   justify-content: center;     /* center the group */
   align-items: center;         /* vertical alignment */
-  gap: 16px;                   /* space between buttons */
-  padding: 10px 0;             /* top/bottom space */
+  gap: 12px;                   /* space between buttons */
+  padding: 10px 16px;          /* add side breathing room for outer tab glow */
   border-bottom: none;         /* no underline */
   flex-wrap: wrap;             /* wrap on small screens */
   overflow-x: auto;            /* allow sideways scroll if many tabs */
@@ -32,9 +32,9 @@
 */
 .tab {
   display: inline-block;
-  flex: 1 1 280px;             /* make tabs share width; min ~280px */
+  flex: 1 1 250px;             /* make tabs share width; slightly smaller */
   text-align: center;          /* center label */
-  padding: 12px 18px;
+  padding: 10px 16px;
   border: 2px solid var(--brand-border);
   border-radius: 12px;         /* rounded corners */
   background: #ffffff;
