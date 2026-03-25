@@ -10,6 +10,8 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, callback
 import plotly.express as px
 from theme import register_template
+import json
+
 # This applies our custom Plotly theme (colors, fonts, etc.)
 # so all graphs match the rest of the dashboard.
 register_template()
@@ -317,6 +319,8 @@ def layout_for(
     line_h = "60vh" if is_mobile else "400px"
     bar_h  = "55vh" if is_mobile else "360px"
     pie_h  = "46vh" if is_mobile else "260px"
+    map_h  = "70vh" if is_mobile else "500px"
+
 
     # Left column: KPI and filters.
     left_col = dbc.Col([kpi_card, filters_card], xs=12, md=3)
@@ -392,6 +396,12 @@ def layout_for(
             id="discharges-section",
             style={} if show_discharges else {"display": "none"}
         ),
+
+        dbc.Row([
+            # Map of overdoses relating to county
+            graph_block("map-county", "Discharges by County", map_h),
+            html.P("Map of discharges by county. Use the legend to toggle categories.", className="sr-only"),
+        ]),
 
         html.Hr(
             className="my-5",
@@ -480,6 +490,7 @@ layout = layout_for(is_mobile=False)
     Output("bar-substances", "figure"),
     Output("county-year-lines", "figure"),
     Output("sex-year-stacked", "figure"),
+    Output("map-county", "figure"),
     Output("table-county", "children"),
     Output("table-age", "children"),
     Output("sex-pie", "figure"),
@@ -491,7 +502,6 @@ layout = layout_for(is_mobile=False)
     Input("age-filter", "value"),
     Input("sex-filter", "value"),
 )
-
 
 def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     """
@@ -657,6 +667,40 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     else:
         sex_bar = px.bar()
 
+    # for map graph
+    with open("assets/coastline.json") as f:
+        counties_geo = json.load(f)
+
+    # ---------- Map graph: Discharges by county ----------
+    if {"county"}.issubset(dff.columns):
+        by_county = (
+            dff.groupby("county")["record_id"]
+            .nunique()
+            .reset_index(name="count")
+        )
+
+        map_fig = px.choropleth(
+            by_county,
+            geojson=counties_geo,
+            locations="county",
+            featureidkey="properties.county",
+            color="count",
+            color_continuous_scale="Blues",
+            labels={"count": "Discharges"}
+        )
+
+        map_fig.update_geos(
+            fitbounds="locations",
+            visible=False
+        )
+
+        map_fig.update_layout(
+            margin=dict(l=0, r=0, t=10, b=0)
+        )
+    else:
+        # If we don't have the needed columns, return an empty figure
+        map_fig = px.choropleth()
+
     # ---------- Helper for the summary tables ----------
     def tbl(column, categories=None):
         """
@@ -725,6 +769,7 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
         sub_bar,
         line_fig,
         sex_bar,
+        map_fig,
         tbl("county"),
         tbl("age_group", age_groups),
         sex_pie,
@@ -744,7 +789,6 @@ def update_dashboard(substance, county, city, year, hawaii_residency, age, sex):
     Input("hawaii-residency-filter-dose", "value"),
     Input("age-filter-dose", "value"),
     Input("sex-filter-dose", "value"),
-
 )
 
 def update_dose_section(substance, county, city, year, hawaii_residency, age, sex):
