@@ -95,3 +95,22 @@ SELECT
   m.year
 FROM dx
 JOIN discharge_data_view_demographics m ON m.record_id = dx.record_id;
+
+
+-- name: load_sudors_data_view_diag_su
+WITH dx AS (
+  SELECT DISTINCT incident_id, TRIM(diagnosis) AS substance
+  FROM sudors_data_view_diag_su
+  WHERE diagnosis IS NOT NULL AND TRIM(diagnosis) <> ''
+)
+SELECT
+  dx.incident_id,
+  dx.substance,
+  m.homeless,
+  m.sex, 
+  m.age_cat, 
+  m.race, 
+  m.ethnicity,
+  m.year
+FROM dx
+JOIN sudors_data_view_demographics m ON m.incident_id = dx.incident_id;

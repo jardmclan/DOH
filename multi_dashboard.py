@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 TAB_PATHS = {
     "/": "Substance Use Dashboards",
     "/discharges": "Discharges related to substance use",
+    "/sudors": "SUDORS Overdose Deaths",
     "/dose": "Drug Overdose Surveillance and Epidemiology (DOSE)",
     "/polysubstance": "Related to polysubstance use",
     "/polysubstance-alt": "Polysubstance Alternates",
@@ -15,6 +16,7 @@ DEFAULT_PATH = "/discharges"
 NAV_GROUPS = {
     "substance": [
         ("/discharges", "Discharges related to substance use"),
+        ("/sudors", "SUDORS Overdose Deaths"),
         ("/polysubstance", "Related to polysubstance use"),
         ("/polysubstance-alt", "Polysubstance Alternates"),
     ],
@@ -28,6 +30,7 @@ NAV_GROUPS = {
 
 ROUTE_TO_GROUP = {
     "/discharges": "substance",
+    "/sudors": "substance",
     "/polysubstance": "substance",
     "/polysubstance-alt": "substance",
     # Example future route mapping:
