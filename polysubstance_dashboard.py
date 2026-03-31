@@ -428,6 +428,7 @@ def update(substance, age, sex, county, year):
                .groupby(["year", "county"])["record_id"]
                .nunique().reset_index(name="discharges")
         )
+        # Show the counts inside each bar segment
         yearly_counts["label"] = yearly_counts["discharges"].map(lambda x: f"{int(x):,}")
 
         fig_year_county = px.bar(
@@ -438,17 +439,30 @@ def update(substance, age, sex, county, year):
             labels={"year": "Year", "discharges": "Discharges"},
             text="label",
         )
-        fig_year_county.update_layout(
-            margin=dict(l=0, r=12, t=50, b=0),   # <-- extra top space
-            xaxis=dict(dtick=1, automargin=True),
-            uniformtext_minsize=12,
-            uniformtext_mode="show",
-        )
         fig_year_county.update_traces(
             textposition="inside",
             insidetextanchor="middle",
             cliponaxis=False,
             textfont_size=12
+        )
+
+        # Calculate total discharges per year to show on top of each stacked bar
+        yearly_totals = yearly_counts.groupby("year")["discharges"].sum().reset_index()
+        for _, row in yearly_totals.iterrows():
+            fig_year_county.add_annotation(
+                x=row["year"],
+                y=row["discharges"],
+                text=f"{int(row['discharges']):,}",
+                showarrow=False,
+                yshift=10,
+                font=dict(size=12)
+            )
+
+        fig_year_county.update_layout(
+            margin=dict(l=0, r=12, t=50, b=0),   # <-- extra top space
+            xaxis=dict(dtick=1, automargin=True),
+            uniformtext_minsize=12,
+            uniformtext_mode="show",
         )
     else:
         fig_year_county = px.bar()

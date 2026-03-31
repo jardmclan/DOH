@@ -125,7 +125,13 @@ To run the main multi-dashboard application locally:
 
 ```bash
 source venv/bin/activate
-python run_dashboard.py
+nohup python run_dashboard.py > logfile.log 2>&1 &
+```
+
+send to background
+```bash
+Ctrl-Z
+bg
 ```
 
 Or directly (may cause comm errors in Anaconda):
@@ -163,11 +169,19 @@ https://jetstream2.exosphere.app/exosphere/projects/e547d834b2fe4beda5061b60dfc9
 
 Copy files over from local to remote, do following on local machine:   
 ```bash
-cd /Users/jgeis/Work/DOH/plotly
+cd /Users/jgeis/Work/DOH/plotly/data
 
-scp discharge_data_view_diag_mh.csv insert-username-here@insert-ip-address-here:/home/exouser/doh_plotly/
+scp discharge_data_view_demographics.csv exouser@149.165.153.166:/home/exouser/doh_plotly/data/
 
-scp dash_app insert-username-here@insert-ip-address-here:/home/exouser/doh_plotly/
+scp discharge_data_view_diag_mh.csv exouser@149.165.153.166:/home/exouser/doh_plotly/data/
+
+scp discharge_data_view_diag_su.csv exouser@149.165.153.166:/home/exouser/doh_plotly/data/
+
+scp dose_data.csv exouser@149.165.153.166:/home/exouser/doh_plotly/data/
+
+scp sudors_data_view_demographics\$.csv exouser@149.165.153.166:/home/exouser/doh_plotly/data/
+
+scp sudors_data_view_diag_su\$.csv exouser@149.165.153.166:/home/exouser/doh_plotly/data/
 ```
 
 
@@ -419,6 +433,13 @@ Here is a documentation draft for your `README.md` file. It is based on the file
 
 
 ### TODO
-* Fix dash-app
-* add in any other files I need to create/move
 * do I need gunicorn?
+* add <11 filters
+* 
+
+
+### NOTES
+## To download MSSQL Tables while accounting for commas in data
+Use the export_table.py script: 
+
+& c:/Users/jgeis/DOH/doh_plotly/venv/Scripts/python.exe c:/Users/jgeis/DOH/doh_plotly/export_table.py

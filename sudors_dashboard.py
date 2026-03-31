@@ -50,11 +50,11 @@ def load_sudors_dataframe_from_db():
     Note: Uses either SQLite or MSSQL automatically based on config.
     """
     
-    sql = load_sql_query("load_sudors_data_view_diag_su")
+    sql = load_sql_query("load_sudors_data_view_diag_su$")
     
     # Execute query using db_utils (automatically uses correct database)
     df = execute_query(sql)
-    print(f"load_sudors_data_view_diag_su returned {len(df):,} rows")
+    print(f"load_sudors_data_view_diag_su$ returned {len(df):,} rows")
 
     # If there is no data, we stop early instead of showing a broken page
     if df.empty:
@@ -66,7 +66,7 @@ def load_sudors_dataframe_from_db():
 
     # For these columns, replace missing values with "Unknown"
     # so we don't get blank labels in filters and tables.
-    for col in ["substance", "homeless", "sex", "age_cat", "race", "ethnicity", "year"]:
+    for col in ["substance", "homeless", "sex", "age_cat", "race_ethnicity", "year"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
     return df
@@ -95,8 +95,7 @@ substance_opts  = sort_opts(df_raw["substance"])                     if "substan
 homeless_opts   = sort_opts(df_raw["homeless"])                      if "homeless"   in df_raw.columns else []
 sex_opts        = sort_opts(df_raw["sex"])                           if "sex"        in df_raw.columns else []
 age_opts        = sort_opts(df_raw["age_cat"])                       if "age_cat"    in df_raw.columns else []
-race_opts       = sort_opts(df_raw["race"])                          if "race"       in df_raw.columns else []
-ethnicity_opts  = sort_opts(df_raw["ethnicity"])                     if "ethnicity"  in df_raw.columns else []
+race_opts       = sort_opts(df_raw["race_ethnicity"])                if "race_ethnicity"       in df_raw.columns else []
 year_opts       = sorted(df_raw["year"].dropna().unique().tolist())  if "year"       in df_raw.columns else []
 
 def opts_list(values):
@@ -195,12 +194,6 @@ filters_card = dbc.Card(
         dcc.Dropdown(
             id="race-filter", options=opts_list(race_opts), multi=True,
             placeholder="Race", className="mb-2",
-            persistence=True, persistence_type="session"
-        ),
-        html.Label("Ethnicity", htmlFor="ethnicity-filter", tabIndex=5, className="form-label"),
-        dcc.Dropdown(
-            id="ethnicity-filter", options=opts_list(ethnicity_opts), multi=True,
-            placeholder="Ethnicity", className="mb-2",
             persistence=True, persistence_type="session"
         ),
         html.Label("Year", htmlFor="year-filter", tabIndex=3, className="form-label"),
@@ -347,11 +340,10 @@ layout = layout_for(is_mobile=False)
     Input("sex-filter", "value"),
     Input("age-filter", "value"),
     Input("race-filter", "value"),
-    Input("ethnicity-filter", "value"),
     Input("year-filter", "value"),
 )
 
-def update_dashboard(substance, homeless, sex, age, race, ethnicity, year):
+def update_dashboard(substance, homeless, sex, age, race, year):
     """
     This function runs every time the user changes a filter.
 
@@ -383,8 +375,7 @@ def update_dashboard(substance, homeless, sex, age, race, ethnicity, year):
     if "homeless" in dff.columns:       dff = apply_filter(dff, "homeless", homeless)
     if "sex" in dff.columns:            dff = apply_filter(dff, "sex", sex)
     if "age" in dff.columns:            dff = apply_filter(dff, "age", age)
-    if "race" in dff.columns:           dff = apply_filter(dff, "race", race)
-    if "ethnicity" in dff.columns:      dff = apply_filter(dff, "ethnicity", ethnicity)
+    if "race_ethnicity" in dff.columns: dff = apply_filter(dff, "race_ethnicity", race)
     if "year" in dff.columns:           dff = apply_filter(dff, "year", year)
 
     # Count unique discharges (each record_id represents one discharge).
@@ -465,8 +456,7 @@ def update_dashboard(substance, homeless, sex, age, race, ethnicity, year):
 
         # Use friendly display labels for table headers
         header_labels = {
-            "ethnicity": "Ethnicity",
-            "race": "Race",
+            "race_ethnicity": "Race",
             "homeless": "Homeless",
             "year": "Year",
             "age_cat": "Age",
@@ -505,7 +495,7 @@ def update_dashboard(substance, homeless, sex, age, race, ethnicity, year):
     return (
         f"{filter_total:,}",
         sud_bar,
-        tbl("race"),
+        tbl("race_ethnicity"),
         tbl("homeless"),
         tbl("year"),
         tbl("age_cat"),
