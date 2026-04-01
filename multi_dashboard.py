@@ -79,11 +79,14 @@ app.layout = dbc.Container(
     Output("top-nav-wrapper", "style"),
     Output("page-title", "children"),
     Input("url", "pathname"),
+    Input("url", "search"),
 )
-def update_active_tab(pathname):
+def update_active_tab(pathname, search):
     """Render the active tab group for the current route and set title."""
     if not pathname:
         pathname = "/"
+    
+    search_params = search if search else ""
 
     group_name = ROUTE_TO_GROUP.get(pathname)
     tabs = []
@@ -92,7 +95,7 @@ def update_active_tab(pathname):
         tabs = [
             html.A(
                 label,
-                href=path,
+                href=f"{path}{search_params}",
                 className=("tab tab--selected" if pathname == path else "tab"),
             )
             for path, label in NAV_GROUPS[group_name]
